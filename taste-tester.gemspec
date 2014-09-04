@@ -1,6 +1,7 @@
 Gem::Specification.new do |s|
   s.name = 'taste-tester'
-  s.version = '0.0.1'
+  s.version = '0.0.2'
+  s.homepage = 'https://github.com/facebook/taste-tester'
   s.platform = Gem::Platform::RUBY
   s.summary = 'Taste Tester'
   s.description = 'Utility for testing Chef changes using chef-zero'
