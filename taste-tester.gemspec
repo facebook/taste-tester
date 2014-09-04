@@ -5,9 +5,9 @@ Gem::Specification.new do |s|
   s.summary = 'Taste Tester'
   s.description = 'Utility for testing Chef changes using chef-zero'
   s.authors = ['Phil Dibowitz', 'Marcin Sawicki']
-  s.extra_rdoc_files = ['README.md', 'LICENSE', 'taste-untester']
-  s.files = %w{README.md LICENSE} + Dir.glob("lib/taste-tester/*.rb") +
-    Dir.glob("bin/*")
+  s.extra_rdoc_files = ['README.md', 'LICENSE']
+  s.files = %w{README.md LICENSE} + Dir.glob('lib/taste-tester/*.rb') +
+    Dir.glob('bin/*') + Dir.glob('scripts/*')
   s.executables = 'taste-tester'
   s.license = 'Apache'
   %w{
