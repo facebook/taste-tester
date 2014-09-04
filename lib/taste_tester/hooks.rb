@@ -1,7 +1,7 @@
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
-require 'taste-tester/logging'
-require 'between-meals/util'
+require 'taste_tester/logging'
+require 'between_meals/util'
 
 module TasteTester
   # Hooks placeholders

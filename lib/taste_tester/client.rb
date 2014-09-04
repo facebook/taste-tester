@@ -1,9 +1,9 @@
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
-require 'taste-tester/logging'
-require 'between-meals/repo'
-require 'between-meals/knife'
-require 'between-meals/changeset'
+require 'taste_tester/logging'
+require 'between_meals/repo'
+require 'between_meals/knife'
+require 'between_meals/changeset'
 
 module TasteTester
   # Client side upload functionality

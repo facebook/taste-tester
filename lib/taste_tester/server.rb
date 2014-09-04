@@ -4,9 +4,9 @@ require 'fileutils'
 require 'socket'
 require 'timeout'
 
-require 'between-meals/util'
-require 'taste-tester/config'
-require 'taste-tester/state'
+require 'between_meals/util'
+require 'taste_tester/config'
+require 'taste_tester/state'
 
 module TasteTester
   # Stateless chef-zero server management

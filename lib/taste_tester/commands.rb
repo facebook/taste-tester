@@ -1,11 +1,11 @@
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 # rubocop:disable UnusedBlockArgument, UnusedMethodArgument
 
-require 'taste-tester/server'
-require 'taste-tester/host'
-require 'taste-tester/config'
-require 'taste-tester/client'
-require 'taste-tester/logging'
+require 'taste_tester/server'
+require 'taste_tester/host'
+require 'taste_tester/config'
+require 'taste_tester/client'
+require 'taste_tester/logging'
 
 module TasteTester
   # Functionality dispatch

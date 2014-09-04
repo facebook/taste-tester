@@ -12,10 +12,10 @@ require 'time'
 require 'optparse'
 require 'colorize'
 
-require 'taste-tester/logging'
-require 'taste-tester/config'
-require 'taste-tester/commands'
-require 'taste-tester/hooks'
+require 'taste_tester/logging'
+require 'taste_tester/config'
+require 'taste_tester/commands'
+require 'taste_tester/hooks'
 
 include TasteTester::Logging
 

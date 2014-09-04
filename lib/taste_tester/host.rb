@@ -5,8 +5,8 @@ require 'base64'
 require 'open3'
 require 'colorize'
 
-require 'taste-tester/ssh'
-require 'taste-tester/tunnel'
+require 'taste_tester/ssh'
+require 'taste_tester/tunnel'
 
 module TasteTester
   # Manage state of the remote node

@@ -4,8 +4,8 @@ require 'fileutils'
 require 'socket'
 require 'timeout'
 
-require 'between-meals/util'
-require 'taste-tester/config'
+require 'between_meals/util'
+require 'taste_tester/config'
 
 module TasteTester
   # State of taste-tester processes
