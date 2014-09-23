@@ -48,8 +48,9 @@ module TasteTester
       " touch -t #{TasteTester::Config.testing_end_time}" +
       " #{TasteTester::Config.timestamp_file} && sleep #{@delta_secs}"
       cmd = "ssh -T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
-        "-o ExitOnForwardFailure=yes -f -R #{@port}:localhost:" +
-        "#{@server.port} root@#{@host} \"#{cmds}\""
+        '-o ServerAliveInterval=10 -o ServerAliveCountMax=6 ' +
+        "-f -R #{@port}:localhost:#{@server.port} " +
+        "root@#{@host} \"#{cmds}\""
       cmd
     end
 
@@ -60,7 +61,7 @@ module TasteTester
       # to true so it doesn't mess up other things... even though this is
       # the only thing we're currently executing in this SSH.
       ssh << "( [ -s #{TasteTester::Config.timestamp_file} ]" +
-        " && kill -- -\$(cat #{TasteTester::Config.timestamp_file}); true )"
+        " && kill -9 -- -\$(cat #{TasteTester::Config.timestamp_file}); true )"
       ssh.run!
     end
   end
