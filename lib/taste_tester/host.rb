@@ -33,7 +33,9 @@ module TasteTester
       @name = name
       @user = ENV['USER']
       @server = server
-      @tunnel = TasteTester::Tunnel.new(@name, @server)
+      if TasteTester::Config.use_ssh_tunnels
+        @tunnel = TasteTester::Tunnel.new(@name, @server)
+      end
     end
 
     def runchef
@@ -69,11 +71,14 @@ module TasteTester
     def test
       logger.warn("Taste-testing on #{@name}")
 
-      # Nuke any existing tunnels that may be there
-      TasteTester::Tunnel.kill(@name)
+      if TasteTester::Config.use_ssh_tunnels
+        # Nuke any existing tunnels that may be there
+        TasteTester::Tunnel.kill(@name)
 
-      # Then setup the tunnel
-      @tunnel.run
+        # Then setup the tunnel
+        @tunnel.run
+      end
+
       @serialized_config = Base64.encode64(config).gsub(/\n/, '')
 
       # Then setup the testing
@@ -105,7 +110,9 @@ module TasteTester
     def untest
       logger.warn("Removing #{@name} from taste-tester")
       ssh = TasteTester::SSH.new(@name)
-      TasteTester::Tunnel.kill(@name)
+      if TasteTester::Config.use_ssh_tunnels
+        TasteTester::Tunnel.kill(@name)
+      end
       ssh << 'rm -vf /etc/chef/client.rb'
       ssh << 'rm -vf /etc/chef/client-taste-tester.rb'
       ssh << 'ln -vs /etc/chef/client-prod.rb /etc/chef/client.rb'
@@ -154,9 +161,16 @@ module TasteTester
     def keeptesting
       logger.warn("Renewing taste-tester on #{@name} until" +
         " #{TasteTester::Config.testing_end_time}")
-      TasteTester::Tunnel.kill(@name)
-      @tunnel = TasteTester::Tunnel.new(@name, @server)
-      @tunnel.run
+      if TasteTester::Config.use_ssh_tunnels
+        TasteTester::Tunnel.kill(@name)
+        @tunnel = TasteTester::Tunnel.new(@name, @server)
+        @tunnel.run
+      else
+        ssh = TasteTester::SSH.new(@name)
+        ssh << "touch -t #{TasteTester::Config.testing_end_time}" +
+          " #{TasteTester::Config.timestamp_file}"
+        ssh.run!
+      end
     end
 
     private

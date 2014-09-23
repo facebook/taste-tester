@@ -50,8 +50,18 @@ module TasteTester
       # If we are using SSH tunneling listen on localhost, otherwise listen
       # on all addresses - both v4 and v6. Note that on localhost, ::1 is
       # v6-only, so we default to 127.0.0.1 instead.
-      @addr = TasteTester::Config.use_ssh_tunnels ? '127.0.0.1' : '::'
-      @host = 'localhost'
+      if TasteTester::Config.use_ssh_tunnels
+        @addr = '127.0.0.1'
+        @host = 'localhost'
+      else
+        @addr = '::'
+        begin
+          @host = Socket.gethostname
+        rescue
+          logger.error('Unable to find fqdn')
+          exit 1
+        end
+      end
     end
 
     def start
