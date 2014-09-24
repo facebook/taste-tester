@@ -1,0 +1,13 @@
+To make a release you should
+
+On a checkout of the *upstream*:
+* Bump the version number in taste_tester.gemspec, commit locally, push
+    vi taste_tester.gemspec
+    git commit -a
+    git push origin master
+* Add and push a tag:
+    git tag -a v0.0.3 -m 'version 0.0.3'
+    git push origin --tags
+* Build and push a release:
+    gem build taste_tester.gemspec
+    gem push taste_tester-0.0.3.gem
