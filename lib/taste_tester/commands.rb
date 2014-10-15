@@ -34,8 +34,7 @@ module TasteTester
 
     def self.restart
       server = TasteTester::Server.new
-      server.stop if TasteTester::Server.running?
-      server.start
+      server.restart
     end
 
     def self.stop

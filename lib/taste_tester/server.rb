@@ -67,12 +67,14 @@ module TasteTester
     def start
       return if TasteTester::Server.running?
       logger.warn('Starting taste-tester server')
+      @state.wipe
       write_config
       start_chef_zero
     end
 
     def stop
       logger.warn('Stopping taste-tester server')
+      @state.wipe
       stop_chef_zero
     end
 
@@ -82,7 +84,6 @@ module TasteTester
         stop_chef_zero
       end
       write_config
-      @state.wipe
       start_chef_zero
     end
 
