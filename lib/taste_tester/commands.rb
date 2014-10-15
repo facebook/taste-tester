@@ -158,6 +158,15 @@ module TasteTester
       client.skip_checks = true if TasteTester::Config.skip_checks
       client.force = true if TasteTester::Config.force_upload
       client.upload
+    rescue => exception
+      errors = ['Cannot find a cookbook named', 'Connection reset by peer']
+      if errors.map {|x| exception.to_s.match(/#{x}/im)}.any?
+        TasteTester::Config.force_upload = true
+        unless @already_retried
+          @already_retried = true
+          retry
+        end
+      end
     end
   end
 end
