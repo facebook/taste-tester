@@ -42,9 +42,14 @@ module TasteTester
         :checksum_dir => TasteTester::Config.checksum_dir,
       )
       @knife.write_user_config
-      @repo = BetweenMeals::Repo.get(TasteTester::Config.repo_type,
-                                     TasteTester::Config.repo, logger)
-      fail 'Could not read repo' unless @repo
+      @repo = BetweenMeals::Repo.get(
+        TasteTester::Config.repo_type,
+        TasteTester::Config.repo,
+        logger,
+      )
+      unless @repo.exists?
+        fail "Could not open repo from #{TasteTester::Config.repo}"
+      end
     end
 
     def checks
