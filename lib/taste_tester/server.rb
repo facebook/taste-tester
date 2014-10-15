@@ -66,7 +66,6 @@ module TasteTester
 
     def start
       return if TasteTester::Server.running?
-      @state.wipe
       logger.warn('Starting taste-tester server')
       write_config
       start_chef_zero
@@ -83,6 +82,7 @@ module TasteTester
         stop_chef_zero
       end
       write_config
+      @state.wipe
       start_chef_zero
     end
 
@@ -125,8 +125,9 @@ module TasteTester
     end
 
     def start_chef_zero
-      @state.wipe
-      @state.port = TasteTester::Config.chef_port
+      unless @state.port
+        @state.port = TasteTester::Config.chef_port
+      end
       logger.info("Starting chef-zero of port #{@state.port}")
       Mixlib::ShellOut.new(
         "/opt/chef/embedded/bin/chef-zero --host #{@addr}" +
@@ -135,7 +136,6 @@ module TasteTester
     end
 
     def stop_chef_zero
-      @state.wipe
       logger.info('Killing your chef-zero instances')
       s = Mixlib::ShellOut.new("pkill -9 -u #{ENV['USER']} -f bin/chef-zero")
       s.run_command
