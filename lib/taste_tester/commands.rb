@@ -160,13 +160,16 @@ module TasteTester
       client.upload
     rescue => exception
       errors = ['Cannot find a cookbook named', 'Connection reset by peer']
-      if errors.map {|x| exception.to_s.match(/#{x}/im)}.any?
+      if errors.any? { |e| exception.to_s.match(/#{e}/im) }
         TasteTester::Config.force_upload = true
         unless @already_retried
           @already_retried = true
           retry
         end
       end
+      logger.error("Upload failed")
+      logger.error(e.to_s)
+      exit 1
     end
   end
 end
