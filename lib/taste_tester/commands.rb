@@ -77,8 +77,14 @@ module TasteTester
         upload
       end
       server = TasteTester::Server.new
-      repo = BetweenMeals::Repo.get(TasteTester::Config.repo_type,
-                                    TasteTester::Config.repo, logger)
+      repo = BetweenMeals::Repo.get(
+        TasteTester::Config.repo_type,
+        TasteTester::Config.repo,
+        logger,
+      )
+      unless repo.exists?
+        fail "Could not open repo from #{TasteTester::Config.repo}"
+      end
       unless TasteTester::Config.skip_pre_test_hook
         TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
       end
