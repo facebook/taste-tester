@@ -130,9 +130,9 @@ module TasteTester
         @state.port = TasteTester::Config.chef_port
       end
       logger.info("Starting chef-zero of port #{@state.port}")
+
       Mixlib::ShellOut.new(
-        "/opt/chef/embedded/bin/chef-zero --host #{@addr}" +
-        " --port #{@state.port} -d"
+        "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
       ).run_command.error!
     end
 
@@ -142,6 +142,17 @@ module TasteTester
       s.run_command
       # You have to give it a moment to stop or the stat fails
       sleep(1)
+    end
+
+    def chef_zero_path
+      [
+        '/opt/chef/embedded/bin/chef-zero',
+        '/opt/chef/bin/chef-zero',
+      ].each do |path|
+        return path if File.exist?(path)
+      end
+      logger.error("chef-zero not found")
+      exit(1)
     end
   end
 end
