@@ -168,7 +168,7 @@ module TasteTester
         end
       end
       logger.error("Upload failed")
-      logger.error(e.to_s)
+      logger.error(exception.to_s)
       exit 1
     end
   end
