@@ -146,8 +146,8 @@ module TasteTester
 
     def chef_zero_path
       [
-        '/opt/chef/embedded/bin/chef-zero',
         '/opt/chef/bin/chef-zero',
+        '/opt/chef/embedded/bin/chef-zero',
       ].each do |path|
         return path if File.exist?(path)
       end
