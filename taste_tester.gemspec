@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'taste_tester'
-  s.version = '0.0.6'
+  s.version = '0.0.7'
   s.homepage = 'https://github.com/facebook/taste-tester'
   s.platform = Gem::Platform::RUBY
   s.summary = 'Taste Tester'
