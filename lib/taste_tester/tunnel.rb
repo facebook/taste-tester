@@ -48,6 +48,8 @@ module TasteTester
       " touch -t #{TasteTester::Config.testing_end_time}" +
       " #{TasteTester::Config.timestamp_file} && sleep #{@delta_secs}"
       cmd = "ssh -T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
+        '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
+        '-o ExitOnForwardFailure=yes ' +
         '-o ServerAliveInterval=10 -o ServerAliveCountMax=6 ' +
         "-f -R #{@port}:localhost:#{@server.port} " +
         "root@#{@host} \"#{cmds}\""
