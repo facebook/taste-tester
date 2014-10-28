@@ -47,9 +47,12 @@ module TasteTester
       cmds = "echo \\\$\\\$ > #{TasteTester::Config.timestamp_file} &&" +
       " touch -t #{TasteTester::Config.testing_end_time}" +
       " #{TasteTester::Config.timestamp_file} && sleep #{@delta_secs}"
+      # As great as it would be to have ExitOnForwardFailure=yes,
+      # we had multiple cases of tunnels dying
+      # if -f and ExitOnForwardFailure are used together.
+      # This is reproducible and should be looked into.
       cmd = "ssh -T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
         '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
-        '-o ExitOnForwardFailure=yes ' +
         '-o ServerAliveInterval=10 -o ServerAliveCountMax=6 ' +
         "-f -R #{@port}:localhost:#{@server.port} " +
         "root@#{@host} \"#{cmds}\""
