@@ -50,6 +50,8 @@ module TasteTester
       # As great as it would be to have ExitOnForwardFailure=yes,
       # we had multiple cases of tunnels dying
       # if -f and ExitOnForwardFailure are used together.
+      # In most cases the first request from chef was "breaking" the tunnel,
+      # in a way that port was still open, but subsequent requests were hanging.
       # This is reproducible and should be looked into.
       cmd = "ssh -T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
         '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
