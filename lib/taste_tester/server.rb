@@ -116,6 +116,7 @@ module TasteTester
       knife = BetweenMeals::Knife.new(
         :logger => logger,
         :user => @user,
+        :ssl => TasteTester::Config.use_ssl,
         :host => @host,
         :port => port,
         :role_dir => TasteTester::Config.roles,
@@ -130,10 +131,9 @@ module TasteTester
         @state.port = TasteTester::Config.chef_port
       end
       logger.info("Starting chef-zero of port #{@state.port}")
-
-      Mixlib::ShellOut.new(
-        "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
-      ).run_command.error!
+      cmd = "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
+      cmd << ' --ssl' if TasteTester::Config.use_ssl
+      Mixlib::ShellOut.new(cmd).run_command.error!
     end
 
     def stop_chef_zero

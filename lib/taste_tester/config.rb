@@ -47,7 +47,8 @@ module TasteTester
     chef_port_range [5000, 5500]
     tunnel_port 4001
     timestamp_file '/etc/chef/test_timestamp'
-    use_ssh_tunnels true
+    use_ssh_tunnels false
+    use_ssl true
 
     skip_pre_upload_hook false
     skip_post_upload_hook false
