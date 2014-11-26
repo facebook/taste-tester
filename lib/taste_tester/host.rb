@@ -179,7 +179,8 @@ module TasteTester
       if TasteTester::Config.use_ssh_tunnels
         url = "http://localhost:#{@tunnel.port}"
       else
-        url = "http://#{@server.host}:#{TasteTester::State.port}"
+        scheme = TasteTester::Config.use_ssl ? 'http' : 'https'
+        url = "#{scheme}://#{@server.host}:#{TasteTester::State.port}"
       end
       ttconfig = <<-eos
 # TasteTester by #{@user}
@@ -189,12 +190,13 @@ if Process.euid != 0
   Process.exit!
 end
 
-log_level                :info
-log_location             STDOUT
-chef_server_url          '#{url}'
+log_level :info
+log_location STDOUT
+chef_server_url '#{url}'
+ssl_verify_mode :verify_none
 Ohai::Config[:plugin_path] << '/etc/chef/ohai_plugins'
 
-      eos
+eos
 
       extra = TasteTester::Hooks.test_remote_client_rb_extra_code(@name)
       if extra

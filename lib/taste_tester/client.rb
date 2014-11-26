@@ -34,6 +34,7 @@ module TasteTester
       @knife = BetweenMeals::Knife.new(
         :logger => logger,
         :user => @server.user,
+        :ssl => TasteTester::Config.use_ssl,
         :host => @server.host,
         :port => @server.port,
         :role_dir => TasteTester::Config.roles,
