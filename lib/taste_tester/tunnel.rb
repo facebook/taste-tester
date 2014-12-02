@@ -45,11 +45,11 @@ module TasteTester
 
     def cmd
       if TasteTester::Config.user != 'root'
-        pid = "$$"
+        pid = "SID=$(ps -p $$ --no-headers -o sid) && echo $SID"
       else
-        pid = "\\\$\\\$"
+        pid = "echo \\\$\\\$"
       end
-      cmds = "echo #{pid} > #{TasteTester::Config.timestamp_file} &&" +
+      cmds = "#{pid} > #{TasteTester::Config.timestamp_file} &&" +
       " touch -t #{TasteTester::Config.testing_end_time}" +
       " #{TasteTester::Config.timestamp_file} && sleep #{@delta_secs}"
       # As great as it would be to have ExitOnForwardFailure=yes,
@@ -65,7 +65,7 @@ module TasteTester
       if TasteTester::Config.user != 'root'
         cc = Base64.encode64(cmds).gsub(/\n/, '')
         cmd += "#{TasteTester::Config.user}@#{@host} \"echo '#{cc}' | base64" +
-          ' --decode | sudo bash -x\"'
+          ' --decode | sudo bash -x"'
       else
         cmd += "root@#{@host} \"#{cmds}\""
       end
@@ -82,7 +82,7 @@ module TasteTester
         sudo = 'sudo '
       end
       cmd = "( [ -s #{TasteTester::Config.timestamp_file} ]" +
-        " && #{sudo}kill -9 -- \$(cat #{TasteTester::Config.timestamp_file}); true )"
+        " && #{sudo}kill -9 -- -\$(cat #{TasteTester::Config.timestamp_file}); true )"
       ssh << cmd
       ssh.run!
     end
