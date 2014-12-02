@@ -51,6 +51,7 @@ MSG
       # rubocop:enable LineLength
       error.lines.each { |x| logger.error x.strip }
       logger.error(e.message)
+      exit(1)
     end
 
     private

@@ -108,7 +108,7 @@ module TasteTester
     def self.untest
       hosts = TasteTester::Config.servers
       unless hosts
-        logger.warn('You must provide a hostname')
+        logger.error('You must provide a hostname')
         exit(1)
       end
       server = TasteTester::Server.new
