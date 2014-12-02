@@ -159,7 +159,14 @@ module TasteTester
       client.force = true if TasteTester::Config.force_upload
       client.upload
     rescue => exception
-      errors = ['Cannot find a cookbook named', 'Connection reset by peer']
+      # We're trying to recover from common chef-zero errors
+      # Most of them happen due to half finished uploads, which leave
+      # chef-zero in undefined state
+      errors = [
+        'Cannot find a cookbook named',
+        'Connection reset by peer',
+        'Object not found',
+      ]
       if errors.any? { |e| exception.to_s.match(/#{e}/im) }
         TasteTester::Config.force_upload = true
         unless @already_retried
