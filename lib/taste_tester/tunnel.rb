@@ -44,7 +44,12 @@ module TasteTester
     end
 
     def cmd
-      cmds = "echo \\\$\\\$ > #{TasteTester::Config.timestamp_file} &&" +
+      if TasteTester::Config.user != 'root'
+        pid = "$$"
+      else
+        pid = "\\\$\\\$"
+      end
+      cmds = "echo #{pid} > #{TasteTester::Config.timestamp_file} &&" +
       " touch -t #{TasteTester::Config.testing_end_time}" +
       " #{TasteTester::Config.timestamp_file} && sleep #{@delta_secs}"
       # As great as it would be to have ExitOnForwardFailure=yes,
@@ -56,8 +61,14 @@ module TasteTester
       cmd = "ssh -T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
         '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
         '-o ServerAliveInterval=10 -o ServerAliveCountMax=6 ' +
-        "-f -R #{@port}:localhost:#{@server.port} " +
-        "root@#{@host} \"#{cmds}\""
+        "-f -R #{@port}:localhost:#{@server.port} "
+      if TasteTester::Config.user != 'root'
+        cc = Base64.encode64(cmds).gsub(/\n/, '')
+        cmd += "#{TasteTester::Config.user}@#{@host} \"echo '#{cc}' | base64" +
+          ' --decode | sudo bash -x\"'
+      else
+        cmd += "root@#{@host} \"#{cmds}\""
+      end
       cmd
     end
 
@@ -67,8 +78,12 @@ module TasteTester
       # surround this in paryns, and make sure as a whole it evaluates
       # to true so it doesn't mess up other things... even though this is
       # the only thing we're currently executing in this SSH.
-      ssh << "( [ -s #{TasteTester::Config.timestamp_file} ]" +
-        " && kill -9 -- -\$(cat #{TasteTester::Config.timestamp_file}); true )"
+      if TasteTester::Config.user != 'root'
+        sudo = 'sudo '
+      end
+      cmd = "( [ -s #{TasteTester::Config.timestamp_file} ]" +
+        " && #{sudo}kill -9 -- \$(cat #{TasteTester::Config.timestamp_file}); true )"
+      ssh << cmd
       ssh.run!
     end
   end
