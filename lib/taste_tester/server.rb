@@ -35,6 +35,7 @@ module TasteTester
       @state = TasteTester::State.new
       @ref_file = TasteTester::Config.ref_file
       ref_dir = File.dirname(File.expand_path(@ref_file))
+      @log_file = "#{ref_dir}/chef-zero.log"
       @zero_path = TasteTester::Config.chef_zero_path
       unless File.directory?(ref_dir)
         begin
@@ -127,11 +128,13 @@ module TasteTester
     end
 
     def start_chef_zero
+      File.unlink("#{@log_file}")
       unless @state.port
         @state.port = TasteTester::Config.chef_port
       end
       logger.info("Starting chef-zero of port #{@state.port}")
-      cmd = "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
+      cmd = "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d " +
+        "--log-file #{@log_file}"
       cmd << ' --ssl' if TasteTester::Config.use_ssl
       Mixlib::ShellOut.new(cmd).run_command.error!
     end
