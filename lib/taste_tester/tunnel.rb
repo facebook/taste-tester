@@ -50,8 +50,8 @@ module TasteTester
         pid = '\\$\\$'
       end
       cmds = "ps -p #{pid} --no-headers -o pgid > #{TasteTester::Config.timestamp_file} &&" +
-      " touch -t #{TasteTester::Config.testing_end_time}" +
-      " #{TasteTester::Config.timestamp_file} && sleep #{@delta_secs}"
+        " touch -t #{TasteTester::Config.testing_end_time}" +
+        " #{TasteTester::Config.timestamp_file} && sleep #{@delta_secs}"
       # As great as it would be to have ExitOnForwardFailure=yes,
       # we had multiple cases of tunnels dying
       # if -f and ExitOnForwardFailure are used together.
