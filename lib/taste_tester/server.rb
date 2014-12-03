@@ -82,6 +82,7 @@ module TasteTester
       logger.warn('Restarting taste-tester server')
       if TasteTester::Server.running?
         stop_chef_zero
+        @state.ref = nil
       end
       write_config
       start_chef_zero
