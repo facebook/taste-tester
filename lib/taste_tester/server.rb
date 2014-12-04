@@ -129,7 +129,7 @@ module TasteTester
     end
 
     def start_chef_zero
-      File.unlink("#{@log_file}")
+      File.unlink(@log_file) if File.exists?(@log_file)
       unless @state.port
         @state.port = TasteTester::Config.chef_port
       end
