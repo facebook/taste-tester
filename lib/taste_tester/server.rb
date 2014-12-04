@@ -134,8 +134,8 @@ module TasteTester
         @state.port = TasteTester::Config.chef_port
       end
       logger.info("Starting chef-zero of port #{@state.port}")
-      cmd = "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d " +
-        "--log-file #{@log_file}"
+      cmd = "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
+      cmd << " --log-file #{@log_file}" if TasteTester::Config.chef_zero_logging
       cmd << ' --ssl' if TasteTester::Config.use_ssl
       Mixlib::ShellOut.new(cmd).run_command.error!
     end
