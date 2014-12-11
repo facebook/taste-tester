@@ -48,6 +48,12 @@ module TasteTester
 
       @user = ENV['USER']
 
+      # SSL and logging are obvious, but SSH is also required since it
+      # determines if we listen only on localhost or not
+      @need_restart = @state.ssl != TasteTester::Config.use_ssl ||
+        @state.logging != TasteTester::Config.chef_zero_logging ||
+        @state.ssh != TasteTester::Config.use_ssh_tunnels
+
       # If we are using SSH tunneling listen on localhost, otherwise listen
       # on all addresses - both v4 and v6. Note that on localhost, ::1 is
       # v6-only, so we default to 127.0.0.1 instead.
@@ -66,8 +72,17 @@ module TasteTester
     end
 
     def start
-      return if TasteTester::Server.running?
-      logger.warn('Starting taste-tester server')
+      if TasteTester::Server.running?
+        if @need_restart
+          logger.warn('Restarting taste-tester server for config change')
+          stop_chef_zero
+          @need_restart = false
+        else
+          return
+        end
+      else
+        logger.warn('Starting taste-tester server')
+      end
       @state.wipe
       write_config
       start_chef_zero
@@ -130,9 +145,12 @@ module TasteTester
 
     def start_chef_zero
       File.unlink(@log_file) if File.exists?(@log_file)
-      unless @state.port
-        @state.port = TasteTester::Config.chef_port
-      end
+      @state.update({
+        :port => TasteTester::Config.chef_port,
+        :ssl => TasteTester::Config.use_ssl,
+        :ssh => TasteTester::Config.use_ssh_tunnels,
+        :logging => TasteTester::Config.chef_zero_logging,
+      })
       logger.info("Starting chef-zero of port #{@state.port}")
       cmd = "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
       cmd << " --log-file #{@log_file}" if TasteTester::Config.chef_zero_logging

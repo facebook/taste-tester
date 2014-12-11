@@ -176,10 +176,10 @@ module TasteTester
     private
 
     def config
+      scheme = TasteTester::Config.use_ssl ? 'https' : 'http'
       if TasteTester::Config.use_ssh_tunnels
-        url = "http://localhost:#{@tunnel.port}"
+        url = "#{scheme}://localhost:#{@tunnel.port}"
       else
-        scheme = TasteTester::Config.use_ssl ? 'https' : 'http'
         url = "#{scheme}://#{@server.host}:#{TasteTester::State.port}"
       end
       ttconfig = <<-eos
