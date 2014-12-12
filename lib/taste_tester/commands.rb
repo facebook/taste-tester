@@ -152,7 +152,7 @@ module TasteTester
       if TasteTester::Config.force_upload
         server.restart
       else
-        server.start unless TasteTester::Server.running?
+        server.start
       end
       client = TasteTester::Client.new(server)
       client.skip_checks = true if TasteTester::Config.skip_checks

@@ -51,12 +51,40 @@ module TasteTester
       write(:port, port)
     end
 
+    def ssl
+      TasteTester::State.read(:ssl)
+    end
+
+    def ssl=(ssl)
+      write(:ssl, ssl)
+    end
+
+    def logging
+      TasteTester::State.read(:logging)
+    end
+
+    def logging=(logging)
+      write(:logging, logging)
+    end
+
+    def ssh
+      TasteTester::State.read(:ssh)
+    end
+
+    def ssh=(ssh)
+      write(:ssh, ssh)
+    end
+
     def ref
       TasteTester::State.read(:ref)
     end
 
     def ref=(ref)
       write(:ref, ref)
+    end
+
+    def update(vals)
+      merge(vals)
     end
 
     def self.port
@@ -72,13 +100,17 @@ module TasteTester
 
     private
 
-    def write(key, value)
+    def write(key, val)
+      merge({key => val})
+    end
+
+    def merge(vals)
       begin
         state = JSON.parse(File.read(TasteTester::Config.ref_file))
       rescue
         state = {}
       end
-      state[key.to_s] = value
+      state.merge!(vals)
       ff = File.open(
         TasteTester::Config.ref_file,
         'w'
