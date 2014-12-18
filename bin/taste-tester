@@ -335,8 +335,13 @@ MODES:
   TasteTester::Logging.verbosity = TasteTester::Config.verbosity
   TasteTester::Logging.use_log_formatter = TasteTester::Config.timestamp
 
-  if File.exists?(File.expand_path(TasteTester::Config.plugin_path))
-    TasteTester::Hooks.get(File.expand_path(TasteTester::Config[:plugin_path]))
+  if TasteTester::Config.plugin_path
+    path = File.expand_path(TasteTester::Config.plugin_path)
+    unless File.exists?(path)
+      logger.error("Plugin not found (#{path})")
+      exit(1)
+    end
+    TasteTester::Hooks.get(path)
   end
 
   case mode.to_sym

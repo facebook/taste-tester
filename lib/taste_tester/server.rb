@@ -167,6 +167,10 @@ module TasteTester
     end
 
     def chef_zero_path
+      if TasteTester::Config.chef_zero_path
+        return TasteTester::Config.chef_zero_path
+      end
+
       [
         '/opt/chef/bin/chef-zero',
         '/opt/chef/embedded/bin/chef-zero',
