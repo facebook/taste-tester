@@ -65,7 +65,7 @@ module TasteTester
 
     def self.relative_cookbook_dirs
       cookbook_dirs.map do |x|
-        File.join(base_dir, x)
+        (base_dir && !base_dir.empty?) ? File.join(base_dir, x) : x
       end
     end
 
@@ -74,7 +74,7 @@ module TasteTester
     end
 
     def self.relative_role_dir
-      File.join(base_dir, role_dir)
+      (base_dir && !base_dir.empty?) ? File.join(base_dir, role_dir) : x
     end
 
     def self.databags
@@ -82,7 +82,7 @@ module TasteTester
     end
 
     def self.relative_databag_dir
-      File.join(base_dir, databag_dir)
+      (base_dir && !base_dir.empty?) ? File.join(base_dir, databag_dir) : x
     end
 
     def self.chef_port
