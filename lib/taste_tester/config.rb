@@ -34,8 +34,8 @@ module TasteTester
     role_dir 'roles'
     databag_dir 'databags'
     config_file '/etc/taste-tester-config.rb'
-    plugin_path '/etc/taste-tester-plugin.rb'
-    chef_zero_path '/opt/chef/embedded/bin/chef-zero'
+    plugin_path nil
+    chef_zero_path nil
     verbosity Logger::WARN
     timestamp false
     user 'root'
