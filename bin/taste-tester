@@ -43,6 +43,15 @@ end
 # Command line parsing and param descriptions
 module TasteTester
   verify = 'Verify your changes were actually applied as intended!'.red
+
+  # Do an initial read of the config file if it's in the default place, so
+  # that if people override chef_client_command the help message is correct.
+  if File.exists?(File.expand_path(TasteTester::Config.config_file))
+    TasteTester::Config.from_file(
+      File.expand_path(TasteTester::Config.config_file)
+    )
+  end
+
   cmd = TasteTester::Config.chef_client_command
   description = <<-EOF
 Welcome to taste-tester!
