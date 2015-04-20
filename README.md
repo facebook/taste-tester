@@ -38,8 +38,9 @@ See the help for futher information.
 
 ## Prerequisites
 
-* Taste Tester assumes that /etc/chef/client.rb on your servers is a symlink and
-that your real config is /etc/chef/client-prod.rb
+* Taste Tester assumes that /etc/chef/client.rb and /etc/chef/client.pem on your
+servers is a symlink and that your real config is /etc/chef/client-prod.rb and
+/etc/chef/client-prod.pem, respectively.
 
 * Taste Tester assumes that it's generally safe to "go back" to production. I.e.
 We set things up so you can set a cronjob to un-taste-test a server after the
@@ -47,7 +48,10 @@ desired amount of time, which means it must be (relatively) safe to revert
 back.
 
 * Taste Tester assumes you use a setup similar to grocery-delivery in
-production. Specifically that you don't use versions or environments. 
+production. Specifically that you don't use versions or environments.
+
+* Taste Tester assumes you have password-less SSH authentication to the hosts
+you want to test on, i.e. SSH public/private keys, SSH certificates, Kerberos
 
 ## Dependencies
 
@@ -79,7 +83,7 @@ standard Ruby.
 All command-line options are available in the config file:
 * debug (bool, default: `false`)
 * timestamp (bool, default: `false`)
-* config_file (string, default: `/etc/gd-config.rb`)
+* config_file (string, default: `/etc/taste-tester-config.rb`)
 * plugin_path (string, default: `/etc/taste-tester-plugin.rb`)
 * repo (string, default: `#{ENV['HOME']}/ops`)
 * testing_time (int, default: `3600`)
