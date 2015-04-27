@@ -74,7 +74,7 @@ module TasteTester
     end
 
     def self.relative_role_dir
-      (base_dir && !base_dir.empty?) ? File.join(base_dir, role_dir) : x
+      (base_dir && !base_dir.empty?) ? File.join(base_dir, role_dir) : role_dir
     end
 
     def self.databags
@@ -82,7 +82,11 @@ module TasteTester
     end
 
     def self.relative_databag_dir
-      (base_dir && !base_dir.empty?) ? File.join(base_dir, databag_dir) : x
+      if base_dir && !base_dir.empty?
+        File.join(base_dir, databag_dir)
+      else
+        databag_dir
+      end
     end
 
     def self.chef_port
