@@ -2,13 +2,13 @@
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -59,17 +59,17 @@ Welcome to taste-tester!
 Usage: taste-tester <mode> [<options>]
 
 TLDR; Most common usage is:
-  vi cookbooks/...             # Make your changes and commit locally
-  taste-tester test -s [host]  # Put host in test mode
-  ssh root@[host]              # Log on host
-  #{format('%-28s', "  #{cmd}")} # Run chef and watch it break
-  vi cookbooks/...             # Fix your cookbooks
-  taste-tester upload          # Upload the diff
-  ssh root@[host]              # Log on host
-  #{format('%-28s', "  #{cmd}")} # Run chef and watch it succeed
+  vi cookbooks/...              # Make your changes and commit locally
+  taste-tester test -s [host]   # Put host in test mode
+  ssh root@[host]               # Log on host
+  #{format('%-28s', "  #{cmd}")}  # Run chef and watch it break
+  vi cookbooks/...              # Fix your cookbooks
+  taste-tester upload           # Upload the diff
+  ssh root@[host]               # Log on host
+  #{format('%-28s', "  #{cmd}")}  # Run chef and watch it succeed
   <#{verify}>
-  taste-tester untest [host]   # Put host back in production
-                               #   (optional - will revert itself after 1 hour)
+  taste-tester untest -s [host] # Put host back in production
+                                #   (optional - will revert itself after 1 hour)
 
 And you're done! See the above wiki page for more details.
 
