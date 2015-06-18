@@ -40,7 +40,8 @@ module TasteTester
 
     def runchef
       logger.warn("Running '#{TasteTester::Config.command}' on #{@name}")
-      cmd = "ssh #{TasteTester::Config.user}@#{@name} "
+      cmd = "#{TasteTester::Config.ssh_cmd} "
+      cmd += "#{TasteTester::Config.user}@#{@name} "
       if TasteTester::Config.user != 'root'
         cc = Base64.encode64(cmds).gsub(/\n/, '')
         cmd += "\"echo '#{cc}' | base64 --decode | sudo bash -x\""

@@ -46,7 +46,9 @@ module TasteTester
       error = <<-MSG
 SSH returned error while connecting to #{TasteTester::Config.user}@#{@host}
 The host might be broken or your SSH access is not working properly
-Try doing 'ssh -v #{TasteTester::Config.user}@#{@host}' and come back once that works
+Try doing
+  #{TasteTester::Config.ssh_cmd} -v #{TasteTester::Config.user}@#{@host}
+and come back once that works
 MSG
       # rubocop:enable LineLength
       error.lines.each { |x| logger.error x.strip }
@@ -61,7 +63,8 @@ MSG
         logger.info("Will run: '#{cmd}' on #{@host}")
       end
       cmds = @cmds.join(' && ')
-      cmd = "ssh -T -o BatchMode=yes -o ConnectTimeout=#{@timeout} "
+      cmd = "#{TasteTester::Config.ssh_cmd} "
+      cmd += "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} "
       cmd += "#{TasteTester::Config.user}@#{@host} "
       if TasteTester::Config.user != 'root'
         cc = Base64.encode64(cmds).gsub(/\n/, '')

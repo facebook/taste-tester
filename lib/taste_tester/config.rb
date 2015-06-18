@@ -48,6 +48,7 @@ module TasteTester
     tunnel_port 4001
     timestamp_file '/etc/chef/test_timestamp'
     use_ssh_tunnels false
+    ssh_cmd 'ssh'
     use_ssl true
     chef_zero_logging true
 
