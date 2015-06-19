@@ -291,7 +291,7 @@ MODES:
     opts.on(
       '-e', '--ssh CMD', 'SSH command to use, defaults to "ssh".'
     ) do |cmd|
-      options[:ssh_cmd] = cmd
+      options[:ssh_command] = cmd
     end
 
     opts.on('--skip-repo-checks', 'Skip repository sanity checks') do
