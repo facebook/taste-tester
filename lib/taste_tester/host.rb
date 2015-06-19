@@ -39,9 +39,10 @@ module TasteTester
     end
 
     def runchef
-      logger.warn("Running '#{TasteTester::Config.command}' on #{@name}")
+      logger.warn("Running '#{TasteTester::Config.chef_client_command}' " +
+                  "on #{@name}")
       cmd = "#{TasteTester::Config.ssh_command} " +
-              "#{TasteTester::Config.user}@#{@name} "
+            "#{TasteTester::Config.user}@#{@name} "
       if TasteTester::Config.user != 'root'
         cc = Base64.encode64(cmds).gsub(/\n/, '')
         cmd += "\"echo '#{cc}' | base64 --decode | sudo bash -x\""
@@ -59,10 +60,10 @@ module TasteTester
         io.close
         $CHILD_STATUS.to_i
       end
-      logger.warn("Finished #{TasteTester::Config.command}" +
+      logger.warn("Finished #{TasteTester::Config.chef_client_command}" +
                   " on #{@name} with status #{status}")
       if status == 0
-        msg = "#{TasteTester::Config.command} was successful" +
+        msg = "#{TasteTester::Config.chef_client_command} was successful" +
               ' - please log to the host and confirm all the intended' +
               ' changes were made'
         logger.error msg.upcase

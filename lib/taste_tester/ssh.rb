@@ -64,8 +64,8 @@ MSG
       end
       cmds = @cmds.join(' && ')
       cmd = "#{TasteTester::Config.ssh_command} " +
-              "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
-              "#{TasteTester::Config.user}@#{@host} "
+            "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
+            "#{TasteTester::Config.user}@#{@host} "
       if TasteTester::Config.user != 'root'
         cc = Base64.encode64(cmds).gsub(/\n/, '')
         cmd += "\"echo '#{cc}' | base64 --decode | sudo bash -x\""
