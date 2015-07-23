@@ -155,7 +155,7 @@ module TasteTester
         server.start
       end
       client = TasteTester::Client.new(server)
-      client.skip_checks = true if TasteTester::Config.skip_checks
+      client.skip_checks = true if TasteTester::Config.skip_repo_checks
       client.force = true if TasteTester::Config.force_upload
       client.upload
     rescue => exception
