@@ -101,7 +101,7 @@ module TasteTester
     private
 
     def write(key, val)
-      merge({key => val})
+      merge({ key => val })
     end
 
     def merge(vals)
