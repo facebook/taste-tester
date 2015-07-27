@@ -49,9 +49,10 @@ module TasteTester
       else
         pid = '\\$\\$'
       end
-      cmds = "ps -p #{pid} -o pgid | grep -v PGID > #{TasteTester::Config.timestamp_file} &&" +
-        " touch -t #{TasteTester::Config.testing_end_time}" +
-        " #{TasteTester::Config.timestamp_file} && sleep #{@delta_secs}"
+      cmds = "ps -p #{pid} -o pgid | grep -v PGID" +
+             " > #{TasteTester::Config.timestamp_file} &&" +
+             " touch -t #{TasteTester::Config.testing_end_time}" +
+             " #{TasteTester::Config.timestamp_file} && sleep #{@delta_secs}"
       # As great as it would be to have ExitOnForwardFailure=yes,
       # we had multiple cases of tunnels dying
       # if -f and ExitOnForwardFailure are used together.
@@ -59,14 +60,14 @@ module TasteTester
       # in a way that port was still open, but subsequent requests were hanging.
       # This is reproducible and should be looked into.
       cmd = "#{TasteTester::Config.ssh_command} " +
-        "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
-        '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
-        '-o ServerAliveInterval=10 -o ServerAliveCountMax=6 ' +
-        "-f -R #{@port}:localhost:#{@server.port} "
+            "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
+            '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
+            '-o ServerAliveInterval=10 -o ServerAliveCountMax=6 ' +
+            "-f -R #{@port}:localhost:#{@server.port} "
       if TasteTester::Config.user != 'root'
         cc = Base64.encode64(cmds).gsub(/\n/, '')
         cmd += "#{TasteTester::Config.user}@#{@host} \"echo '#{cc}' | base64" +
-          ' --decode | sudo bash -x"'
+               ' --decode | sudo bash -x"'
       else
         cmd += "root@#{@host} \"#{cmds}\""
       end
@@ -83,7 +84,8 @@ module TasteTester
         sudo = 'sudo '
       end
       cmd = "( [ -s #{TasteTester::Config.timestamp_file} ]" +
-        " && #{sudo}kill -9 -- -\$(cat #{TasteTester::Config.timestamp_file}); true )"
+            " && #{sudo}kill -9 -- " +
+            "-\$(cat #{TasteTester::Config.timestamp_file}); true )"
       ssh << cmd
       ssh.run!
     end
