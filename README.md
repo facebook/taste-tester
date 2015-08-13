@@ -1,5 +1,7 @@
 # Taste Tester
 
+[![Build Status](https://travis-ci.org/facebook/taste-tester.svg)](http://travis-ci.org/facebook/taste-tester)
+
 ## Intro
 Ohai!
 
