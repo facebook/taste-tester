@@ -90,10 +90,11 @@ module TasteTester
       ssh << "touch -t #{TasteTester::Config.testing_end_time}" +
         " #{TasteTester::Config.timestamp_file}"
       ssh << "echo -n '#{@serialized_config}' | base64 --decode" +
-        ' > /etc/chef/client-taste-tester.rb'
-      ssh << 'rm -vf /etc/chef/client.rb'
-      ssh << '( ln -vs /etc/chef/client-taste-tester.rb' +
-        ' /etc/chef/client.rb; true )'
+        " > #{TasteTester::Config.chef_config_path}/client-taste-tester.rb"
+      ssh << "rm -vf #{TasteTester::Config.chef_config_path}/client.rb"
+      ssh << "( ln -vs #{TasteTester::Config.chef_config_path}" +
+        "/client-taste-tester.rb #{TasteTester::Config.chef_config_path}/" +
+        'client.rb; true )'
       ssh.run!
 
       # Then run any other stuff they wanted
@@ -115,19 +116,26 @@ module TasteTester
       if TasteTester::Config.use_ssh_tunnels
         TasteTester::Tunnel.kill(@name)
       end
-      ssh << 'rm -vf /etc/chef/client.rb'
-      ssh << 'rm -vf /etc/chef/client-taste-tester.rb'
-      ssh << 'ln -vs /etc/chef/client-prod.rb /etc/chef/client.rb'
-      ssh << 'rm -vf /etc/chef/client.pem'
-      ssh << 'ln -vs /etc/chef/client-prod.pem /etc/chef/client.pem'
-      ssh << "rm -vf #{TasteTester::Config.timestamp_file}"
-      ssh << 'logger -t taste-tester Returning server to production'
+      [
+        "rm -vf #{TasteTester::Config.chef_config_path}/client.rb",
+        "rm -vf #{TasteTester::Config.chef_config_path}/client-taste-tester.rb",
+        "ln -vs #{TasteTester::Config.chef_config_path}/client-prod.rb " +
+          "#{TasteTester::Config.chef_config_path}/client.rb",
+        "rm -vf #{TasteTester::Config.chef_config_path}/client.pem",
+        "ln -vs #{TasteTester::Config.chef_config_path}/client-prod.pem " +
+          "#{TasteTester::Config.chef_config_path}/client.pem",
+        "rm -vf #{TasteTester::Config.timestamp_file}",
+        'logger -t taste-tester Returning server to production',
+      ].each do |cmd|
+        ssh << cmd
+      end
       ssh.run!
     end
 
     def who_is_testing
       ssh = TasteTester::SSH.new(@name)
-      ssh << 'grep "^# TasteTester by" /etc/chef/client.rb'
+      ssh << 'grep "^# TasteTester by"' +
+        " #{TasteTester::Config.chef_config_path}/client.rb"
       output = ssh.run
       if output.first == 0
         user = output.last.match(/# TasteTester by (.*)$/)
@@ -138,7 +146,7 @@ module TasteTester
 
       # Legacy FB stuff, remove after migration. Safe for everyone else.
       ssh = TasteTester::SSH.new(@name)
-      ssh << 'file /etc/chef/client.rb'
+      ssh << "file #{TasteTester::Config.chef_config_path}/client.rb"
       output = ssh.run
       if output.first == 0
         user = output.last.match(/client-(.*)-(taste-tester|test).rb/)
@@ -184,6 +192,7 @@ module TasteTester
       else
         url = "#{scheme}://#{@server.host}:#{TasteTester::State.port}"
       end
+      # rubocop:disable Metrics/LineLength
       ttconfig = <<-eos
 # TasteTester by #{@user}
 # Prevent people from screwing up their permissions
@@ -196,9 +205,10 @@ log_level :info
 log_location STDOUT
 chef_server_url '#{url}'
 ssl_verify_mode :verify_none
-Ohai::Config[:plugin_path] << '/etc/chef/ohai_plugins'
+Ohai::Config[:plugin_path] << '#{TasteTester::Config.chef_config_path}/ohai_plugins'
 
 eos
+      # rubocop:enable Metrics/LineLength
 
       extra = TasteTester::Hooks.test_remote_client_rb_extra_code(@name)
       if extra

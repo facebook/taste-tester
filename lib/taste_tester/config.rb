@@ -51,6 +51,7 @@ module TasteTester
     ssh_command 'ssh'
     use_ssl true
     chef_zero_logging true
+    chef_config_path '/etc/chef'
 
     skip_pre_upload_hook false
     skip_post_upload_hook false
