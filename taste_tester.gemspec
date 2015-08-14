@@ -20,6 +20,8 @@ Gem::Specification.new do |s|
   end
   %w{
     rubocop
+    chef-zero
+    knife-solo
   }.each do |dep|
     s.add_development_dependency dep
   end
