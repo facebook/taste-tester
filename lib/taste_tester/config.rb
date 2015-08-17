@@ -28,7 +28,7 @@ module TasteTester
     extend BetweenMeals::Util
 
     repo "#{ENV['HOME']}/ops"
-    repo_type 'git'
+    repo_type 'auto'
     base_dir 'chef'
     cookbook_dirs ['cookbooks']
     role_dir 'roles'

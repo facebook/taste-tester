@@ -253,6 +253,13 @@ MODES:
     end
 
     opts.on(
+      '--repo-type TYPE',
+      'Override repo type, default is auto.'
+    ) do |type|
+      options[:repo_type] = type
+    end
+
+    opts.on(
       '-R', '--roles ROLE[,ROLE]', Array,
       'Specific roles to upload. Intended mostly for debugging,' +
         ' not recommended. Works on upload and test. Not yet implemented.'
