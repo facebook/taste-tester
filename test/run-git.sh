@@ -5,7 +5,7 @@ rm -rf /tmp/ops
 GIT="git -c user.email='foo@bar.com' -c user.name='foobar'"
 
 function tt {
-bundle exec ./bin/taste-tester test -s localhost -y -c ./test/tt-git.rb -v
+  bundle exec ./bin/taste-tester test -s localhost -y -c $1 -v
 }
 (
   git init /tmp/ops
@@ -16,4 +16,5 @@ bundle exec ./bin/taste-tester test -s localhost -y -c ./test/tt-git.rb -v
   $GIT add . -A
   $GIT commit -m "Add cookbook1"
 )
-tt
+tt ./test/tt-git.rb
+tt ./test/tt-auto.rb

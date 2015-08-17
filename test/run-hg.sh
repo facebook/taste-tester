@@ -5,7 +5,7 @@ rm -rf /tmp/ops
 HG="hg --config ui.username=foo@bar.com"
 
 function tt {
-bundle exec ./bin/taste-tester test -s localhost -y -c ./test/tt-hg.rb -v
+  bundle exec ./bin/taste-tester test -s localhost -y -c $1 -v
 }
 (
   mkdir /tmp/ops
@@ -17,4 +17,5 @@ bundle exec ./bin/taste-tester test -s localhost -y -c ./test/tt-hg.rb -v
   $HG add .
   $HG commit -m "Add cookbook1"
 )
-tt
+tt ./test/tt-hg.rb
+tt ./test/tt-auto.rb
