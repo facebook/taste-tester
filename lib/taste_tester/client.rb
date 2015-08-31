@@ -30,6 +30,8 @@ module TasteTester
     attr_accessor :force, :skip_checks
 
     def initialize(server)
+      path = File.expand_path(TasteTester::Config.repo)
+      logger.warn("Using #{path}")
       @server = server
       @knife = BetweenMeals::Knife.new(
         :logger => logger,
@@ -62,8 +64,6 @@ module TasteTester
     def upload
       checks unless @skip_checks
 
-      path = File.expand_path(TasteTester::Config.repo)
-      logger.warn("Using #{path}")
       logger.info("Last commit: #{@repo.head_rev} " +
         "'#{@repo.last_msg.split("\n").first}'" +
         " by #{@repo.last_author[:email]}")
