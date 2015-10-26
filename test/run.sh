@@ -3,3 +3,4 @@ set -e
 set -o verbose
 ./test/run-git.sh
 ./test/run-hg.sh
+./test/run-broken.sh
