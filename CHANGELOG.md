@@ -1,3 +1,6 @@
+## 0.0.10
+* Fix dependency
+
 ## 0.0.9
 * Honor user-specified `chef_client_command` everywhere
 * Various help message fixes
