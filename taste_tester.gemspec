@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.authors = ['Phil Dibowitz', 'Marcin Sawicki']
   s.extra_rdoc_files = ['README.md', 'LICENSE']
   s.files = %w{README.md LICENSE} + Dir.glob('lib/taste_tester/*.rb') +
-    Dir.glob('bin/*') + Dir.glob('scripts/*')
+            Dir.glob('bin/*') + Dir.glob('scripts/*')
   s.executables = 'taste-tester'
   s.license = 'Apache'
   s.add_dependency 'between_meals', '>= 0.0.6'
