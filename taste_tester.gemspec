@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'taste_tester'
-  s.version = '0.0.8'
+  s.version = '0.0.9'
   s.homepage = 'https://github.com/facebook/taste-tester'
   s.platform = Gem::Platform::RUBY
   s.summary = 'Taste Tester'
@@ -11,10 +11,10 @@ Gem::Specification.new do |s|
     Dir.glob('bin/*') + Dir.glob('scripts/*')
   s.executables = 'taste-tester'
   s.license = 'Apache'
+  s.add_dependency 'between_meals >= 0.0.6'
   %w{
     mixlib-config
     colorize
-    between_meals
   }.each do |dep|
     s.add_dependency dep
   end
