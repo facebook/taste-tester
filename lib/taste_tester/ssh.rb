@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require 'taste_tester/exceptions'
+
 module TasteTester
   # Thin ssh wrapper
   class SSH
@@ -53,7 +55,7 @@ MSG
       # rubocop:enable LineLength
       error.lines.each { |x| logger.error x.strip }
       logger.error(e.message)
-      exit(1)
+      raise TasteTester::Exceptions::SshError
     end
 
     private
