@@ -28,6 +28,7 @@ require 'taste_tester/logging'
 require 'taste_tester/config'
 require 'taste_tester/commands'
 require 'taste_tester/hooks'
+require 'taste_tester/exceptions'
 
 include TasteTester::Logging
 
@@ -362,28 +363,32 @@ MODES:
     TasteTester::Hooks.get(path)
   end
 
-  case mode.to_sym
-  when :start
-    TasteTester::Commands.start
-  when :stop
-    TasteTester::Commands.stop
-  when :restart
-    TasteTester::Commands.restart
-  when :keeptesting
-    TasteTester::Commands.keeptesting
-  when :status
-    TasteTester::Commands.status
-  when :test
-    TasteTester::Commands.test
-  when :untest
-    TasteTester::Commands.untest
-  when :run
-    TasteTester::Commands.runchef
-  when :upload
-    TasteTester::Commands.upload
-  else
-    logger.error("Invalid mode: #{mode}")
-    puts parser
+  begin
+    case mode.to_sym
+    when :start
+      TasteTester::Commands.start
+    when :stop
+      TasteTester::Commands.stop
+    when :restart
+      TasteTester::Commands.restart
+    when :keeptesting
+      TasteTester::Commands.keeptesting
+    when :status
+      TasteTester::Commands.status
+    when :test
+      TasteTester::Commands.test
+    when :untest
+      TasteTester::Commands.untest
+    when :run
+      TasteTester::Commands.runchef
+    when :upload
+      TasteTester::Commands.upload
+    else
+      logger.error("Invalid mode: #{mode}")
+      puts parser
+      exit(1)
+    end
+  rescue TasteTester::Exceptions::SshError
     exit(1)
   end
 end
