@@ -30,7 +30,7 @@ module TasteTester
 
     def initialize
       ref_dir = File.dirname(File.expand_path(
-                               TasteTester::Config.ref_file
+                               TasteTester::Config.ref_file,
       ))
       unless File.directory?(ref_dir)
         begin
@@ -98,6 +98,15 @@ module TasteTester
       end
     end
 
+    def self.read(key)
+      JSON.parse(File.read(TasteTester::Config.ref_file))[key.to_s]
+    rescue => e
+      logger.debug(e)
+      nil
+    end
+
+    private_class_method :read
+
     private
 
     def write(key, val)
@@ -113,7 +122,7 @@ module TasteTester
       state.merge!(vals)
       ff = File.open(
         TasteTester::Config.ref_file,
-        'w'
+        'w',
       )
       ff.write(state.to_json)
       ff.close
@@ -121,13 +130,6 @@ module TasteTester
       logger.error('Unable to write the reffile')
       logger.debug(e)
       exit 0
-    end
-
-    def self.read(key)
-      JSON.parse(File.read(TasteTester::Config.ref_file))[key.to_s]
-    rescue => e
-      logger.debug(e)
-      nil
     end
   end
 end

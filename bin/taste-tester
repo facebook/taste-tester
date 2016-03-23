@@ -45,7 +45,7 @@ module TasteTester
   # that if people override chef_client_command the help message is correct.
   if File.exists?(File.expand_path(TasteTester::Config.config_file))
     TasteTester::Config.from_file(
-      File.expand_path(TasteTester::Config.config_file)
+      File.expand_path(TasteTester::Config.config_file),
     )
   end
 
@@ -115,7 +115,7 @@ MODES:
     should be no need to do this manually.
   EOF
 
-  mode = ARGV.shift unless ARGV.size > 0 && ARGV[0].start_with?('-')
+  mode = ARGV.shift unless !ARGV.empty? && ARGV[0].start_with?('-')
 
   unless mode
     mode = 'help'
@@ -255,7 +255,7 @@ MODES:
 
     opts.on(
       '--repo-type TYPE',
-      'Override repo type, default is auto.'
+      'Override repo type, default is auto.',
     ) do |type|
       options[:repo_type] = type
     end

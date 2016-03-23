@@ -44,13 +44,13 @@ module TasteTester
       cmd = "#{TasteTester::Config.ssh_command} " +
             "#{TasteTester::Config.user}@#{@name} "
       if TasteTester::Config.user != 'root'
-        cc = Base64.encode64(cmds).gsub(/\n/, '')
+        cc = Base64.encode64(cmds).delete("\n")
         cmd += "\"echo '#{cc}' | base64 --decode | sudo bash -x\""
       else
         cmd += "\"#{cmds}\""
       end
       status = IO.popen(
-        cmd
+        cmd,
       ) do |io|
         # rubocop:disable AssignmentInCondition
         while line = io.gets
@@ -81,7 +81,7 @@ module TasteTester
         @tunnel.run
       end
 
-      @serialized_config = Base64.encode64(config).gsub(/\n/, '')
+      @serialized_config = Base64.encode64(config).delete("\n")
 
       # Then setup the testing
       ssh = TasteTester::SSH.new(@name)
@@ -100,7 +100,7 @@ module TasteTester
       # Then run any other stuff they wanted
       cmds = TasteTester::Hooks.test_remote_cmds(
         TasteTester::Config.dryrun,
-        @name
+        @name,
       )
 
       if cmds && cmds.any?
