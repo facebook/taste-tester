@@ -65,7 +65,7 @@ module TasteTester
             '-o ServerAliveInterval=10 -o ServerAliveCountMax=6 ' +
             "-f -R #{@port}:localhost:#{@server.port} "
       if TasteTester::Config.user != 'root'
-        cc = Base64.encode64(cmds).gsub(/\n/, '')
+        cc = Base64.encode64(cmds).delete("\n")
         cmd += "#{TasteTester::Config.user}@#{@host} \"echo '#{cc}' | base64" +
                ' --decode | sudo bash -x"'
       else

@@ -35,7 +35,7 @@ module TasteTester
       @cmds << string
     end
 
-    alias_method :<<, :add
+    alias << add
 
     def run
       @status, @output = exec(cmd, logger)
@@ -69,7 +69,7 @@ MSG
             "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
             "#{TasteTester::Config.user}@#{@host} "
       if TasteTester::Config.user != 'root'
-        cc = Base64.encode64(cmds).gsub(/\n/, '')
+        cc = Base64.encode64(cmds).delete("\n")
         cmd += "\"echo '#{cc}' | base64 --decode | sudo bash -x\""
       else
         cmd += "\'#{cmds}\'"
