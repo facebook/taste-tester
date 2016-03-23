@@ -205,7 +205,7 @@ log_level :info
 log_location STDOUT
 chef_server_url '#{url}'
 ssl_verify_mode :verify_none
-Ohai::Config[:plugin_path] << '#{TasteTester::Config.chef_config_path}/ohai_plugins'
+ohai.plugin_path << '#{TasteTester::Config.chef_config_path}/ohai_plugins'
 
 eos
       # rubocop:enable Metrics/LineLength
