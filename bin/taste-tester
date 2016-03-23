@@ -115,7 +115,7 @@ MODES:
     should be no need to do this manually.
   EOF
 
-  mode = ARGV.shift unless ARGV.size > 0 && ARGV[0].start_with?('-')
+  mode = ARGV.shift unless !ARGV.empty? && ARGV[0].start_with?('-')
 
   unless mode
     mode = 'help'
