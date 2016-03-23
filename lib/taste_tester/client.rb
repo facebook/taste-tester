@@ -51,7 +51,7 @@ module TasteTester
         logger,
       )
       unless @repo.exists?
-        fail "Could not open repo from #{TasteTester::Config.repo}"
+        raise "Could not open repo from #{TasteTester::Config.repo}"
       end
     end
 
