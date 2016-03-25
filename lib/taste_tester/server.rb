@@ -62,6 +62,7 @@ module TasteTester
         @host = 'localhost'
       else
         @addr = '::'
+        @addr = '0.0.0.0' unless TasteTester::Config.ipv6
         begin
           @host = Socket.gethostname
         rescue

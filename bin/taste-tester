@@ -302,6 +302,13 @@ MODES:
       options[:skip_repo_checks] = true
     end
 
+    opts.on(
+      '--ipv6 BOOLEAN', TrueClass,
+        'Enable/Disable IPv6 chef-zero bind host and' +
+        ' bind to IPv4 host instead.') do |i|
+      options[:ipv6] = i
+    end
+
     opts.on('-y', '--yes', 'Do not prompt before testing.') do
       options[:yes] = true
     end
