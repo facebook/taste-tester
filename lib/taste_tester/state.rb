@@ -105,8 +105,6 @@ module TasteTester
       nil
     end
 
-    private_class_method :read
-
     private
 
     def write(key, val)
