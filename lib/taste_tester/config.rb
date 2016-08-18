@@ -52,6 +52,7 @@ module TasteTester
     use_ssl true
     chef_zero_logging true
     chef_config_path '/etc/chef'
+    chef_config 'client.rb'
 
     skip_pre_upload_hook false
     skip_post_upload_hook false
@@ -67,7 +68,7 @@ module TasteTester
 
     def self.relative_cookbook_dirs
       cookbook_dirs.map do |x|
-        (base_dir && !base_dir.empty?) ? File.join(base_dir, x) : x
+        base_dir && !base_dir.empty? ? File.join(base_dir, x) : x
       end
     end
 
@@ -76,7 +77,7 @@ module TasteTester
     end
 
     def self.relative_role_dir
-      (base_dir && !base_dir.empty?) ? File.join(base_dir, role_dir) : role_dir
+      base_dir && !base_dir.empty? ? File.join(base_dir, role_dir) : role_dir
     end
 
     def self.databags

@@ -62,7 +62,7 @@ module TasteTester
       end
       logger.warn("Finished #{TasteTester::Config.chef_client_command}" +
                   " on #{@name} with status #{status}")
-      if status == 0
+      if status.zero?
         msg = "#{TasteTester::Config.chef_client_command} was successful" +
               ' - please log to the host and confirm all the intended' +
               ' changes were made'
@@ -91,10 +91,11 @@ module TasteTester
         " #{TasteTester::Config.timestamp_file}"
       ssh << "echo -n '#{@serialized_config}' | base64 --decode" +
         " > #{TasteTester::Config.chef_config_path}/client-taste-tester.rb"
-      ssh << "rm -vf #{TasteTester::Config.chef_config_path}/client.rb"
+      ssh << "rm -vf #{TasteTester::Config.chef_config_path}/" +
+        TasteTester::Config.chef_config
       ssh << "( ln -vs #{TasteTester::Config.chef_config_path}" +
         "/client-taste-tester.rb #{TasteTester::Config.chef_config_path}/" +
-        'client.rb; true )'
+        "#{TasteTester::Config.chef_config}; true )"
       ssh.run!
 
       # Then run any other stuff they wanted
@@ -117,10 +118,12 @@ module TasteTester
         TasteTester::Tunnel.kill(@name)
       end
       [
-        "rm -vf #{TasteTester::Config.chef_config_path}/client.rb",
+        "rm -vf #{TasteTester::Config.chef_config_path}/" +
+          TasteTester::Config.chef_config,
         "rm -vf #{TasteTester::Config.chef_config_path}/client-taste-tester.rb",
         "ln -vs #{TasteTester::Config.chef_config_path}/client-prod.rb " +
-          "#{TasteTester::Config.chef_config_path}/client.rb",
+          "#{TasteTester::Config.chef_config_path}/" +
+          TasteTester::Config.chef_config,
         "rm -vf #{TasteTester::Config.chef_config_path}/client.pem",
         "ln -vs #{TasteTester::Config.chef_config_path}/client-prod.pem " +
           "#{TasteTester::Config.chef_config_path}/client.pem",
@@ -135,9 +138,10 @@ module TasteTester
     def who_is_testing
       ssh = TasteTester::SSH.new(@name)
       ssh << 'grep "^# TasteTester by"' +
-        " #{TasteTester::Config.chef_config_path}/client.rb"
+        " #{TasteTester::Config.chef_config_path}/" +
+        TasteTester::Config.chef_config
       output = ssh.run
-      if output.first == 0
+      if output.first.zero?
         user = output.last.match(/# TasteTester by (.*)$/)
         if user
           return user[1]
@@ -146,9 +150,10 @@ module TasteTester
 
       # Legacy FB stuff, remove after migration. Safe for everyone else.
       ssh = TasteTester::SSH.new(@name)
-      ssh << "file #{TasteTester::Config.chef_config_path}/client.rb"
+      ssh << "file #{TasteTester::Config.chef_config_path}/" +
+        TasteTester::Config.chef_config
       output = ssh.run
-      if output.first == 0
+      if output.first.zero?
         user = output.last.match(/client-(.*)-(taste-tester|test).rb/)
         if user
           return user[1]
@@ -161,7 +166,7 @@ module TasteTester
     def in_test?
       ssh = TasteTester::SSH.new(@name)
       ssh << "test -f #{TasteTester::Config.timestamp_file}"
-      if ssh.run.first == 0 && who_is_testing && who_is_testing != ENV['USER']
+      if ssh.run.first.zero? && who_is_testing && who_is_testing != ENV['USER']
         true
       else
         false
