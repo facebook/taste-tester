@@ -63,7 +63,7 @@ module TasteTester
       else
         @addr = '::'
         begin
-          @host = Socket.gethostname
+          @host = TasteTester::Config.my_hostname || Socket.gethostname
         rescue
           logger.error('Unable to find fqdn')
           exit 1
