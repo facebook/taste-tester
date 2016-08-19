@@ -207,6 +207,12 @@ MODES:
     end
 
     opts.on(
+      '-m', '--my-hostname HOSTNAME', String, 'Hostname for local chef server'
+    ) do |hostname|
+      options[:my_hostname] = hostname
+    end
+
+    opts.on(
       '-l', '--linkonly', 'Only setup the remote server, skip uploading.'
     ) do
       options[:linkonly] = true

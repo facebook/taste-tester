@@ -53,6 +53,7 @@ module TasteTester
     chef_zero_logging true
     chef_config_path '/etc/chef'
     chef_config 'client.rb'
+    my_hostname nil
 
     skip_pre_upload_hook false
     skip_post_upload_hook false
