@@ -117,11 +117,12 @@ module TasteTester
       if TasteTester::Config.use_ssh_tunnels
         TasteTester::Tunnel.kill(@name)
       end
+      config_prod = TasteTester::Config.chef_config.split('.').join('-prod.')
       [
         "rm -vf #{TasteTester::Config.chef_config_path}/" +
           TasteTester::Config.chef_config,
         "rm -vf #{TasteTester::Config.chef_config_path}/client-taste-tester.rb",
-        "ln -vs #{TasteTester::Config.chef_config_path}/client-prod.rb " +
+        "ln -vs #{TasteTester::Config.chef_config_path}/#{config_prod} " +
           "#{TasteTester::Config.chef_config_path}/" +
           TasteTester::Config.chef_config,
         "rm -vf #{TasteTester::Config.chef_config_path}/client.pem",
