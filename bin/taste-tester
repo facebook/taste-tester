@@ -219,6 +219,12 @@ MODES:
     end
 
     opts.on(
+      '-L', '--locallink', 'Configure the local chef client without ssh.'
+    ) do
+      options[:locallink] = true
+    end
+
+    opts.on(
       '-t', '--testing-timestamp TIME',
         'Until when should the host remain in testing.' +
         ' Anything parsable is ok, such as "5/18 4:35" or "16/9/13".'
