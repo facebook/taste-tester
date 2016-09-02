@@ -18,5 +18,7 @@ module TasteTester
   module Exceptions
     class SshError < StandardError
     end
+    class LocalLinkError < StandardError
+    end
   end
 end
