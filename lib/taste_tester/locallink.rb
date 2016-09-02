@@ -57,7 +57,7 @@ module TasteTester
         cc = Base64.encode64(cmds).delete("\n")
         cmd = "echo '#{cc}' | base64 --decode | sudo bash -x"
       else
-        cmd = "#{cmds}"
+        cmd = cmds.to_s
       end
       cmd
     end

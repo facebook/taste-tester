@@ -73,10 +73,11 @@ module TasteTester
 
     def get_transport
       if TasteTester::Config.locallink
-        transport = TasteTester::LocalLink.new()
+        transport = TasteTester::LocalLink.new
       else
         transport = TasteTester::SSH.new(@name)
       end
+      transport
     end
 
     def test
