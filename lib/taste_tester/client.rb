@@ -43,6 +43,7 @@ module TasteTester
         :cookbook_dirs => TasteTester::Config.cookbooks,
         :databag_dir => TasteTester::Config.databags,
         :checksum_dir => TasteTester::Config.checksum_dir,
+        :role_type => TasteTester::Config.role_type,
       )
       @knife.write_user_config
       @repo = BetweenMeals::Repo.get(
