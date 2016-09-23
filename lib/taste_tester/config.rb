@@ -33,6 +33,7 @@ module TasteTester
     cookbook_dirs ['cookbooks']
     role_dir 'roles'
     databag_dir 'databags'
+    role_type 'rb'
     config_file '/etc/taste-tester-config.rb'
     plugin_path nil
     chef_zero_path nil
