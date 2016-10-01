@@ -62,7 +62,7 @@ module TasteTester
         logger.error('Plugin file not found')
         exit(1)
       end
-      class_eval(File.read(path), __FILE__, __LINE__)
+      class_eval(File.read(path), path, 1)
     end
   end
 end
