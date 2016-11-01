@@ -123,6 +123,7 @@ MODES:
   end
 
   options = { :config_file => TasteTester::Config.config_file }
+  # rubocop:disable Metrics/BlockLength
   parser = OptionParser.new do |opts|
     opts.banner = description
 
@@ -216,6 +217,12 @@ MODES:
       '-l', '--linkonly', 'Only setup the remote server, skip uploading.'
     ) do
       options[:linkonly] = true
+    end
+
+    opts.on(
+      '-L', '--locallink', 'Configure the local chef client without ssh.'
+    ) do
+      options[:locallink] = true
     end
 
     opts.on(
@@ -345,6 +352,7 @@ MODES:
       options[:skip_post_test_hook] = true
     end
   end
+  # rubocop:enable Metrics/BlockLength
 
   if mode == 'help'
     puts parser

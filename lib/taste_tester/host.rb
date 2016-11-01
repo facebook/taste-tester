@@ -20,6 +20,7 @@ require 'open3'
 require 'colorize'
 
 require 'taste_tester/ssh'
+require 'taste_tester/locallink'
 require 'taste_tester/tunnel'
 
 module TasteTester
@@ -70,6 +71,15 @@ module TasteTester
       end
     end
 
+    def get_transport
+      if TasteTester::Config.locallink
+        transport = TasteTester::LocalLink.new
+      else
+        transport = TasteTester::SSH.new(@name)
+      end
+      transport
+    end
+
     def test
       logger.warn("Taste-testing on #{@name}")
 
@@ -84,18 +94,19 @@ module TasteTester
       @serialized_config = Base64.encode64(config).delete("\n")
 
       # Then setup the testing
-      ssh = TasteTester::SSH.new(@name)
-      ssh << 'logger -t taste-tester Moving server into taste-tester' +
+      transport = get_transport
+
+      transport << 'logger -t taste-tester Moving server into taste-tester' +
         " for #{@user}"
-      ssh << touchcmd
-      ssh << "echo -n '#{@serialized_config}' | base64 --decode" +
+      transport << touchcmd
+      transport << "echo -n '#{@serialized_config}' | base64 --decode" +
         " > #{TasteTester::Config.chef_config_path}/client-taste-tester.rb"
-      ssh << "rm -vf #{TasteTester::Config.chef_config_path}/" +
+      transport << "rm -vf #{TasteTester::Config.chef_config_path}/" +
         TasteTester::Config.chef_config
-      ssh << "( ln -vs #{TasteTester::Config.chef_config_path}" +
+      transport << "( ln -vs #{TasteTester::Config.chef_config_path}" +
         "/client-taste-tester.rb #{TasteTester::Config.chef_config_path}/" +
         "#{TasteTester::Config.chef_config}; true )"
-      ssh.run!
+      transport.run!
 
       # Then run any other stuff they wanted
       cmds = TasteTester::Hooks.test_remote_cmds(
@@ -104,23 +115,24 @@ module TasteTester
       )
 
       if cmds && cmds.any?
-        ssh = TasteTester::SSH.new(@name)
-        cmds.each { |c| ssh << c }
-        ssh.run!
+        transport = get_transport
+        cmds.each { |c| transport << c }
+        transport.run!
       end
     end
 
     def untest
       logger.warn("Removing #{@name} from taste-tester")
-      ssh = TasteTester::SSH.new(@name)
+      transport = get_transport
       if TasteTester::Config.use_ssh_tunnels
         TasteTester::Tunnel.kill(@name)
       end
+      config_prod = TasteTester::Config.chef_config.split('.').join('-prod.')
       [
         "rm -vf #{TasteTester::Config.chef_config_path}/" +
           TasteTester::Config.chef_config,
         "rm -vf #{TasteTester::Config.chef_config_path}/client-taste-tester.rb",
-        "ln -vs #{TasteTester::Config.chef_config_path}/client-prod.rb " +
+        "ln -vs #{TasteTester::Config.chef_config_path}/#{config_prod} " +
           "#{TasteTester::Config.chef_config_path}/" +
           TasteTester::Config.chef_config,
         "rm -vf #{TasteTester::Config.chef_config_path}/client.pem",
@@ -129,17 +141,17 @@ module TasteTester
         "rm -vf #{TasteTester::Config.timestamp_file}",
         'logger -t taste-tester Returning server to production',
       ].each do |cmd|
-        ssh << cmd
+        transport << cmd
       end
-      ssh.run!
+      transport.run!
     end
 
     def who_is_testing
-      ssh = TasteTester::SSH.new(@name)
-      ssh << 'grep "^# TasteTester by"' +
+      transport = get_transport
+      transport << 'grep "^# TasteTester by"' +
         " #{TasteTester::Config.chef_config_path}/" +
         TasteTester::Config.chef_config
-      output = ssh.run
+      output = transport.run
       if output.first.zero?
         user = output.last.match(/# TasteTester by (.*)$/)
         if user
@@ -148,10 +160,10 @@ module TasteTester
       end
 
       # Legacy FB stuff, remove after migration. Safe for everyone else.
-      ssh = TasteTester::SSH.new(@name)
-      ssh << "file #{TasteTester::Config.chef_config_path}/" +
+      transport = get_transport
+      transport << "file #{TasteTester::Config.chef_config_path}/" +
         TasteTester::Config.chef_config
-      output = ssh.run
+      output = transport.run
       if output.first.zero?
         user = output.last.match(/client-(.*)-(taste-tester|test).rb/)
         if user
@@ -163,9 +175,10 @@ module TasteTester
     end
 
     def in_test?
-      ssh = TasteTester::SSH.new(@name)
-      ssh << "test -f #{TasteTester::Config.timestamp_file}"
-      if ssh.run.first.zero? && who_is_testing && who_is_testing != ENV['USER']
+      transport = get_transport
+      transport << "test -f #{TasteTester::Config.timestamp_file}"
+      if transport.run.first.zero? && who_is_testing &&
+          who_is_testing != ENV['USER']
         true
       else
         false
@@ -180,18 +193,22 @@ module TasteTester
         @tunnel = TasteTester::Tunnel.new(@name, @server)
         @tunnel.run
       else
-        ssh = TasteTester::SSH.new(@name)
-        ssh << touchcmd
-        ssh.run!
+        transport = get_transport
+        transport << touchcmd
+        transport.run!
       end
     end
 
     private
 
     def touchcmd
-      touch = Base64.encode64("touch --date \"$(date -d @" +
-        "#{TasteTester::Config.testing_end_time.to_i} +'%Y-%m-%d %T')\"" +
-        " #{TasteTester::Config.timestamp_file}").delete("\n")
+      touch = Base64.encode64(
+        "if [ 'Darwin' = $(uname) ]; then touch -t \"$(date -r " +
+        "#{TasteTester::Config.testing_end_time.to_i} +'%Y%m%d%H%M.%S')\" " +
+        "#{TasteTester::Config.timestamp_file}; else touch --date \"$(date " +
+        "-d @#{TasteTester::Config.testing_end_time.to_i} +'%Y-%m-%d %T')\" " +
+        "#{TasteTester::Config.timestamp_file}; fi",
+      ).delete("\n")
       "echo -n '#{touch}' | base64 --decode | bash"
     end
 
@@ -200,7 +217,8 @@ module TasteTester
       if TasteTester::Config.use_ssh_tunnels
         url = "#{scheme}://localhost:#{@tunnel.port}"
       else
-        url = "#{scheme}://#{@server.host}:#{TasteTester::State.port}"
+        url = "#{scheme}://#{@server.host}"
+        url << ":#{TasteTester::State.port}" if TasteTester::State.port
       end
       # rubocop:disable Metrics/LineLength
       ttconfig = <<-eos

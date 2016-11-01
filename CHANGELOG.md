@@ -1,3 +1,14 @@
+## 0.0.11
+* Add support for JSON roles
+* add --locallink option
+* Fix support for 'port' on chef server
+* Fix untesting
+* Add option to pass hostname for local machine
+* Add option to pass chef config file name
+* chef-zero debug logging
+* update syntax for ohai plugin path
+* report SSH errors better
+
 ## 0.0.10
 * Fix dependency
 

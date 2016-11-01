@@ -1,6 +1,7 @@
+# rubocop:disable Metrics/BlockLength
 Gem::Specification.new do |s|
   s.name = 'taste_tester'
-  s.version = '0.0.10'
+  s.version = '0.0.11'
   s.homepage = 'https://github.com/facebook/taste-tester'
   s.platform = Gem::Platform::RUBY
   s.summary = 'Taste Tester'
@@ -26,3 +27,4 @@ Gem::Specification.new do |s|
     s.add_development_dependency dep
   end
 end
+# rubocop:enable Metrics/BlockLength
