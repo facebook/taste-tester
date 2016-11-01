@@ -87,8 +87,7 @@ module TasteTester
       ssh = TasteTester::SSH.new(@name)
       ssh << 'logger -t taste-tester Moving server into taste-tester' +
         " for #{@user}"
-      ssh << "touch -t #{TasteTester::Config.testing_end_time}" +
-        " #{TasteTester::Config.timestamp_file}"
+      ssh << touchcmd
       ssh << "echo -n '#{@serialized_config}' | base64 --decode" +
         " > #{TasteTester::Config.chef_config_path}/client-taste-tester.rb"
       ssh << "rm -vf #{TasteTester::Config.chef_config_path}/" +
@@ -175,20 +174,26 @@ module TasteTester
 
     def keeptesting
       logger.warn("Renewing taste-tester on #{@name} until" +
-        " #{TasteTester::Config.testing_end_time}")
+        " #{TasteTester::Config.testing_end_time.strftime('%y%m%d%H%M.%S')}")
       if TasteTester::Config.use_ssh_tunnels
         TasteTester::Tunnel.kill(@name)
         @tunnel = TasteTester::Tunnel.new(@name, @server)
         @tunnel.run
       else
         ssh = TasteTester::SSH.new(@name)
-        ssh << "touch -t #{TasteTester::Config.testing_end_time}" +
-          " #{TasteTester::Config.timestamp_file}"
+        ssh << touchcmd
         ssh.run!
       end
     end
 
     private
+
+    def touchcmd
+      touch = Base64.encode64("touch --date \"$(date -d @" +
+        "#{TasteTester::Config.testing_end_time.to_i} +'%Y-%m-%d %T')\"" +
+        " #{TasteTester::Config.timestamp_file}").delete("\n")
+      "echo -n '#{touch}' | base64 --decode | bash"
+    end
 
     def config
       scheme = TasteTester::Config.use_ssl ? 'https' : 'http'
