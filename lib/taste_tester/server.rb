@@ -21,6 +21,7 @@ require 'timeout'
 require 'between_meals/util'
 require 'taste_tester/config'
 require 'taste_tester/state'
+require 'taste_tester/windows'
 
 module TasteTester
   # Stateless chef-zero server management
@@ -152,22 +153,31 @@ module TasteTester
                       :logging => TasteTester::Config.chef_zero_logging,
                     })
       logger.info("Starting chef-zero of port #{@state.port}")
-      cmd = "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
-      if TasteTester::Config.chef_zero_logging
-        cmd << " --log-file #{@log_file} --log-level debug"
+      if windows?
+        extend ::TasteTester::Windows
+        start_win_chef_zero_server
+      else
+        cmd = "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
+        if TasteTester::Config.chef_zero_logging
+          cmd << " --log-file #{@log_file}" +
+            ' --log-level debug'
+        end
+        cmd << ' --ssl' if TasteTester::Config.use_ssl
+        Mixlib::ShellOut.new(cmd).run_command.error!
       end
-      if TasteTester::Config.use_ssl
-        cmd << ' --ssl'
-      end
-      Mixlib::ShellOut.new(cmd).run_command.error!
     end
 
     def stop_chef_zero
-      logger.info('Killing your chef-zero instances')
-      s = Mixlib::ShellOut.new("pkill -9 -u #{ENV['USER']} -f bin/chef-zero")
-      s.run_command
-      # You have to give it a moment to stop or the stat fails
-      sleep(1)
+      if windows?
+        extend ::TasteTester::Windows
+        nuke_all_cz_pids
+      else
+        logger.info('Killing your chef-zero instances')
+        s = Mixlib::ShellOut.new("pkill -9 -u #{ENV['USER']} -f bin/chef-zero")
+        s.run_command
+        # You have to give it a moment to stop or the stat fails
+        sleep(1)
+      end
     end
 
     def chef_zero_path
@@ -183,6 +193,10 @@ module TasteTester
       end
       logger.error('chef-zero not found')
       exit(1)
+    end
+
+    def windows?
+      Gem.win_platform?
     end
   end
 end
