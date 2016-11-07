@@ -123,6 +123,7 @@ MODES:
   end
 
   options = { :config_file => TasteTester::Config.config_file }
+  # rubocop:disable Metrics/BlockLength
   parser = OptionParser.new do |opts|
     opts.banner = description
 
@@ -351,6 +352,7 @@ MODES:
       options[:skip_post_test_hook] = true
     end
   end
+  # rubocop:enable Metrics/BlockLength
 
   if mode == 'help'
     puts parser

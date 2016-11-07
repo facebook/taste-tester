@@ -108,9 +108,9 @@ module TasteTester
 
     def self.testing_end_time
       if TasteTester::Config.testing_until
-        TasteTester::Config.testing_until.strftime('%y%m%d%H%M.%S')
+        TasteTester::Config.testing_until
       else
-        (Time.now + TasteTester::Config.testing_time).strftime('%y%m%d%H%M.%S')
+        Time.now + TasteTester::Config.testing_time
       end
     end
   end
