@@ -24,6 +24,7 @@ module TasteTester
         /MIN
         #{TasteTester::Config.chef_zero_path}
         --port #{@state.port}
+        --host #{@addr}
       }.join(' ')
       # rubocop:enable Lint/PercentStringArray
 
