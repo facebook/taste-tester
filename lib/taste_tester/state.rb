@@ -92,6 +92,14 @@ module TasteTester
     end
 
     def wipe
+      # Save port between restarts. It might not be free when we restart, but
+      # at least we'll try to keep the same
+      port = self.port
+      real_wipe
+      write(:port, port)
+    end
+
+    def real_wipe
       if TasteTester::Config.ref_file &&
          File.exists?(TasteTester::Config.ref_file)
         File.delete(TasteTester::Config.ref_file)
