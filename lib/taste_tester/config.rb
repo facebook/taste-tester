@@ -96,8 +96,9 @@ module TasteTester
 
     def self.chef_port
       require 'taste_tester/state'
-      port_range = (chef_port_range.first.to_i..chef_port_range.last.to_i
-                    ).to_a.shuffle
+      port_range = (
+        chef_port_range.first.to_i..chef_port_range.last.to_i
+      ).to_a.shuffle
       if TasteTester::State.port
         port_range.unshift(TasteTester::State.port)
       end
