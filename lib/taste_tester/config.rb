@@ -96,12 +96,12 @@ module TasteTester
 
     def self.chef_port
       require 'taste_tester/state'
-      previous_ports = []
+      port_range = (chef_port_range.first.to_i..chef_port_range.last.to_i
+                    ).to_a.shuffle
       if TasteTester::State.port
-        previous_ports << TasteTester::State.port
+        port_range.unshift(TasteTester::State.port)
       end
-      range = chef_port_range.first.to_i..chef_port_range.last.to_i
-      (previous_ports + range.to_a.shuffle).each do |port|
+      port_range.each do |port|
         unless port_open?(port)
           return port
         end
