@@ -17,13 +17,17 @@
 module TasteTester
   module Windows
     def start_win_chef_zero_server
-      cmd = "#{TasteTester::Config.chef_zero_path} --port #{@state.port}"
+      # `START` needs quotes around one of the arguments to function correctly.
+      # rubocop:disable Lint/PercentStringArray
+      cmd = %W{
+        START "taste-tester"
+        /MIN
+        #{TasteTester::Config.chef_zero_path}
+        --port #{@state.port}
+        --host #{@addr}
+      }.join(' ')
+      # rubocop:enable Lint/PercentStringArray
 
-      if TasteTester::Config.my_hostname
-        cmd << " --host #{TasteTester::Config.my_hostname}"
-      else
-        cmd << " --host #{@addr}"
-      end
       if TasteTester::Config.chef_zero_logging
         cmd << " --log-file #{@log_file} --log-level debug"
       end
@@ -37,12 +41,17 @@ module TasteTester
       sleep(2)
     end
 
+    # `START` will also create a parent process for `cmd.exe` when `ruby.exe` is
+    # created, so we also need to make sure that we find those and kill them
+    # after the ruby process is terminated. Otherwise many orphaned `cmd.exe`
+    # windows could be left open in the aftermath.
     def find_cz_pids
       require 'wmi-lite'
       wmi = WmiLite::Wmi.new
       cz_process_query = %{
         SELECT
-          ProcessID
+          ProcessID,
+          ParentProcessID
         FROM
           Win32_Process
         WHERE
@@ -51,15 +60,16 @@ module TasteTester
           Name = "ruby.exe"
       }
       wmi.query(cz_process_query).map do |process|
-        process['processid']
+        [process['processid'], process['parentprocessid']]
       end
     end
 
     # It is possible to have multiple chef-zero processes running which may
     # mess up taste-tester's state. So... nuke 'em all.
     def nuke_all_cz_pids
-      find_cz_pids.each do |pid|
+      find_cz_pids.each do |pid, parentpid|
         ::Mixlib::ShellOut.new("taskkill /F /PID #{pid}").run_command
+        ::Mixlib::ShellOut.new("taskkill /F /PID #{parentpid}").run_command
       end
     end
   end
