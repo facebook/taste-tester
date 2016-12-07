@@ -16,6 +16,10 @@
 
 module TasteTester
   module Windows
+    # We use START to spawn a subprocess of chef-zero since if you were to do
+    # this directly within a terminal session it will collide with the running
+    # chef-zero process when the user tries to input commands leading to many
+    # keystrokes being lost :(
     def start_win_chef_zero_server
       # `START` needs quotes around one of the arguments to function correctly.
       # rubocop:disable Lint/PercentStringArray
@@ -24,16 +28,18 @@ module TasteTester
         /MIN
         #{TasteTester::Config.chef_zero_path}
         --port #{@state.port}
-        --host #{@addr}
       }.join(' ')
       # rubocop:enable Lint/PercentStringArray
 
+      if TasteTester::Config.my_hostname
+        cmd << " --host #{TasteTester::Config.my_hostname}"
+      else
+        cmd << " --host #{@addr}"
+      end
       if TasteTester::Config.chef_zero_logging
         cmd << " --log-file #{@log_file} --log-level debug"
       end
-      if TasteTester::Config.use_ssl
-        cmd << ' --ssl'
-      end
+      cmd << ' --ssl' if TasteTester::Config.use_ssl
 
       # Mixlib::Shellout will always wait for a process to finish before
       # returning, so we use `spawn` instead.
