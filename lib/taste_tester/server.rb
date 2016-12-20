@@ -185,11 +185,9 @@ module TasteTester
         return TasteTester::Config.chef_zero_path
       end
 
-      [
-        '/opt/chef/bin/chef-zero',
-        '/opt/chef/embedded/bin/chef-zero',
-      ].each do |path|
-        return path if File.exist?(path)
+      ENV['PATH'].split(':').each do |path|
+        zero = "#{path}/chef-zero"
+        return zero if File.exist?(zero)
       end
       logger.error('chef-zero not found')
       exit(1)
