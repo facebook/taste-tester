@@ -1,3 +1,10 @@
+## 0.0.12
+* Check for chef-zero anywhere in PATH, not just two hard-coded directories
+* Windows support 
+* Keep the same port on restart
+* Handle client and server having different timezones
+* Fix line number reporting when hooks crash
+
 ## 0.0.11
 * Add support for JSON roles
 * add --locallink option
