@@ -3,7 +3,6 @@
 [![Build Status](https://travis-ci.org/facebook/taste-tester.svg)](http://travis-ci.org/facebook/taste-tester)
 
 ## Intro
-Ohai!
 
 Welcome to Taste Tester, software to manage a chef-zero instance and use it to
 test changes on production servers.
