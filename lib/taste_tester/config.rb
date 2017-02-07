@@ -56,6 +56,13 @@ module TasteTester
     chef_config 'client.rb'
     my_hostname nil
 
+    if Gem.win_platform?
+      timestamp_file 'C:/chef/test_timestamp'
+      config_file 'C:/chef/taste-tester-config.rb'
+      chef_config_path 'C:/chef'
+      chef_zero_path 'C:\opscode\chef\embedded\bin\chef-zero.bat'
+    end
+
     skip_pre_upload_hook false
     skip_post_upload_hook false
     skip_pre_test_hook false
