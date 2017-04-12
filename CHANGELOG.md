@@ -30,6 +30,7 @@
 * Fix bug in determining default role directory
 * Fix bug in determining default databag directory
 
+asdfasdfasdf
 ## 0.0.8
 * Honor chef-zero path from config
 * If user specifies a plugin path, error if it does not exist
