@@ -84,7 +84,7 @@ module TasteTester
           logger,
         )
         unless repo.exists?
-          raise "Could not open repo from #{TasteTester::Config.repo}"
+          fail "Could not open repo from #{TasteTester::Config.repo}"
         end
       end
       unless TasteTester::Config.skip_pre_test_hook ||
