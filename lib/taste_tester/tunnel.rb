@@ -44,15 +44,13 @@ module TasteTester
     end
 
     def cmd
-      if TasteTester::Config.user != 'root'
-        pid = '$$'
-      else
-        pid = '\\$\\$'
-      end
-      cmds = "ps -p #{pid} -o pgid | grep -v PGID" +
+      @max_ping = @delta_secs / 10
+      pid = '$$'
+      @ts = TasteTester::Config.testing_end_time.strftime('%y%m%d%H%M.%S')
+      cmds = "ps -o pgid= -p $(ps -o ppid= -p #{pid}) | sed \"s| ||g\" " +
              " > #{TasteTester::Config.timestamp_file} &&" +
-             " touch -t #{TasteTester::Config.testing_end_time}" +
-             " #{TasteTester::Config.timestamp_file} && sleep #{@delta_secs}"
+             " touch -t #{@ts} #{TasteTester::Config.timestamp_file} &&" +
+             " sleep #{@delta_secs}"
       # As great as it would be to have ExitOnForwardFailure=yes,
       # we had multiple cases of tunnels dying
       # if -f and ExitOnForwardFailure are used together.
@@ -62,14 +60,14 @@ module TasteTester
       cmd = "#{TasteTester::Config.ssh_command} " +
             "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
             '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
-            '-o ServerAliveInterval=10 -o ServerAliveCountMax=6 ' +
+            "-o ServerAliveInterval=10 -o ServerAliveCountMax=#{@max_ping} " +
             "-f -R #{@port}:localhost:#{@server.port} "
       if TasteTester::Config.user != 'root'
         cc = Base64.encode64(cmds).delete("\n")
         cmd += "#{TasteTester::Config.user}@#{@host} \"echo '#{cc}' | base64" +
                ' --decode | sudo bash -x"'
       else
-        cmd += "root@#{@host} \"#{cmds}\""
+        cmd += "root@#{@host} '#{cmds}'"
       end
       cmd
     end
@@ -85,7 +83,8 @@ module TasteTester
       end
       cmd = "( [ -s #{TasteTester::Config.timestamp_file} ]" +
             " && #{sudo}kill -9 -- " +
-            "-\$(cat #{TasteTester::Config.timestamp_file}); true )"
+            "-\$(cat #{TasteTester::Config.timestamp_file}) 2>/dev/null; " +
+            ' true )'
       ssh << cmd
       ssh.run!
     end
