@@ -14,6 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+CONFIG_PATH='/etc/chef'
+CONFIG_NAME='client'
+
+CONFIG_FILE="${CONFIG_FILE:-/etc/taste-untester-config}"
+if [ -e "$CONFIG_FILE" ]; then
+  source "$COFNIG_FILE"
+fi
+
 CONFLINK='/etc/chef/client.rb'
 PRODCONF='/etc/chef/client-prod.rb'
 CERTLINK='/etc/chef/client.pem'
