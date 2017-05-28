@@ -407,6 +407,9 @@ MODES:
   end
 end
 
-if __FILE__ == $PROGRAM_NAME
+# Both versions of this trigger YodaCondition. :(
+# https://github.com/bbatsov/rubocop/issues/4433
+# rubocop:disable Style/YodaCondition
+if $PROGRAM_NAME == __FILE__
   include TasteTester
 end
