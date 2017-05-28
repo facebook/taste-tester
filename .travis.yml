@@ -9,4 +9,4 @@ gemfile:
   - Gemfile
 
 script:
-  - bundle exec rubocop
+  - bundle exec rubocop -D

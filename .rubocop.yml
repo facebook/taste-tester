@@ -167,7 +167,7 @@ Style/PercentLiteralDelimiters:
 Lint/AmbiguousBlockAssociation:
   Enabled: false
 
-AllCops:  
+AllCops:
   TargetRubyVersion: 2.1
   Exclude:
     # template files named `rb` instead of `erb` are a sin against ruby-nature.
