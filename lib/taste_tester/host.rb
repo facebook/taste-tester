@@ -99,7 +99,7 @@ module TasteTester
       transport << 'logger -t taste-tester Moving server into taste-tester' +
         " for #{@user}"
       transport << touchcmd
-      transport << "echo -n '#{@serialized_config}' | base64 --decode" +
+      transport << "/bin/echo -n '#{@serialized_config}' | base64 --decode" +
         " > #{TasteTester::Config.chef_config_path}/client-taste-tester.rb"
       transport << "rm -vf #{TasteTester::Config.chef_config_path}/" +
         TasteTester::Config.chef_config
@@ -209,7 +209,7 @@ module TasteTester
         "-d @#{TasteTester::Config.testing_end_time.to_i} +'%Y-%m-%d %T')\" " +
         "#{TasteTester::Config.timestamp_file}; fi",
       ).delete("\n")
-      "echo -n '#{touch}' | base64 --decode | bash"
+      "/bin/echo -n '#{touch}' | base64 --decode | bash"
     end
 
     def config
