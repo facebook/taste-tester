@@ -1,6 +1,7 @@
 # Taste Tester
 
-[![Build Status](https://travis-ci.org/facebook/taste-tester.svg)](http://travis-ci.org/facebook/taste-tester)
+[![TravisCI](https://travis-ci.org/facebook/taste-tester.svg)](http://travis-ci.org/facebook/taste-tester)
+[![CircleCI](https://circleci.com/gh/facebook/taste-tester.svg?style=svg)](https://circleci.com/gh/facebook/taste-tester)
 
 ## Intro
 Ohai!
