@@ -55,6 +55,7 @@ module TasteTester
     chef_config_path '/etc/chef'
     chef_config 'client.rb'
     my_hostname nil
+    track_symlinks false
 
     skip_pre_upload_hook false
     skip_post_upload_hook false
