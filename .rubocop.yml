@@ -25,7 +25,7 @@ SymbolArray:
   Enabled: false
 
 # This recommends using external gems to parse heredocs
-Style/IndentHeredoc:
+Layout/IndentHeredoc:
   Enabled: false
 
 CyclomaticComplexity:
@@ -118,6 +118,28 @@ Performance/RedundantMerge:
 Style/ConditionalAssignment:
   Enabled: false
 
+Naming/HeredocDelimiterNaming:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/NumericLiteralPrefix:
+  Enabled: false
+
+Naming/VariableNumber:
+  Enabled: false
+
+Metrics/BlockLength:
+  Enabled: false
+
+# no, we're not putting parens around `lazy`
+Lint/AmbiguousBlockAssociation:
+  Enabled: false
+
+Naming/HeredocDelimiterNaming:
+  Enabled: false
+
 #
 # Modified rules
 #
@@ -130,42 +152,26 @@ DotPosition:
 HashSyntax:
   EnforcedStyle: hash_rockets
 
-Style/Documentation:
-  Enabled: false
-
 TrailingCommaInLiteral:
   EnforcedStyleForMultiline: comma
 
 TrailingCommaInArguments:
   EnforcedStyleForMultiline: comma
 
-Style/IndentArray:
+Layout/IndentArray:
   EnforcedStyle: consistent
 
 Style/SignalException:
   EnforcedStyle: semantic
 
-Style/NumericLiteralPrefix:
-  Enabled: false
-
-Style/VariableNumber:
-  Enabled: false
-
 Style/RegexpLiteral:
   EnforcedStyle: mixed
-
-Metrics/BlockLength:
-  Enabled: false
 
 Style/PercentLiteralDelimiters:
   PreferredDelimiters:
     default: {}
     '%i': {}
     '%w': {}
-
-# no, we're not putting parens around `lazy`
-Lint/AmbiguousBlockAssociation:
-  Enabled: false
 
 AllCops:
   TargetRubyVersion: 2.1

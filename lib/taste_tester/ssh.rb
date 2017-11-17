@@ -43,7 +43,7 @@ module TasteTester
 
     def run!
       @status, @output = exec!(cmd, logger)
-    rescue => e
+    rescue StandardError => e
       # rubocop:disable LineLength
       error = <<-MSG
 SSH returned error while connecting to #{TasteTester::Config.user}@#{@host}
