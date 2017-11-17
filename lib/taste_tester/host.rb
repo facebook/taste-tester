@@ -221,7 +221,7 @@ module TasteTester
         url << ":#{TasteTester::State.port}" if TasteTester::State.port
       end
       # rubocop:disable Metrics/LineLength
-      ttconfig = <<-eos
+      ttconfig = <<-EOS
 # TasteTester by #{@user}
 # Prevent people from screwing up their permissions
 if Process.euid != 0
@@ -235,22 +235,22 @@ chef_server_url '#{url}'
 ssl_verify_mode :verify_none
 ohai.plugin_path << '#{TasteTester::Config.chef_config_path}/ohai_plugins'
 
-eos
+EOS
       # rubocop:enable Metrics/LineLength
 
       extra = TasteTester::Hooks.test_remote_client_rb_extra_code(@name)
       if extra
-        ttconfig += <<-eos
+        ttconfig += <<-EOS
 # Begin user-hook specified code
         #{extra}
 # End user-hook secified code
 
-        eos
+        EOS
       end
 
-      ttconfig += <<-eos
+      ttconfig += <<-EOS
 puts 'INFO: Running on #{@name} in taste-tester by #{@user}'
-      eos
+      EOS
       return ttconfig
     end
   end
