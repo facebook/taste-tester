@@ -54,6 +54,7 @@ module TasteTester
       unless @repo.exists?
         fail "Could not open repo from #{TasteTester::Config.repo}"
       end
+      @track_symlinks = TasteTester::Config.track_symlinks
     end
 
     def checks
@@ -136,6 +137,7 @@ module TasteTester
           :databag_dir =>
             TasteTester::Config.relative_databag_dir,
         },
+        @track_symlinks,
       )
 
       cbs = changeset.cookbooks
