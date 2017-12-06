@@ -21,6 +21,7 @@ require 'colorize'
 
 require 'taste_tester/ssh'
 require 'taste_tester/noop'
+require 'taste_tester/locallink'
 require 'taste_tester/tunnel'
 
 module TasteTester
@@ -72,7 +73,9 @@ module TasteTester
     end
 
     def get_transport
-      if TasteTester::Config.transport.casecmp('noop').zero?
+      if TasteTester::Config.transport.casecmp('locallink').zero?
+        transport = TasteTester::LocalLink.new
+      elsif TasteTester::Config.transport.casecmp('noop').zero?
         transport = TasteTester::NoOP.new
       else
         transport = TasteTester::SSH.new(@name)
