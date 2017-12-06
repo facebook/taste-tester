@@ -18,7 +18,7 @@ require 'taste_tester/exceptions'
 
 module TasteTester
   # Wrapper for running commands on local system
-  class LocalLink
+  class NoOp
     include TasteTester::Logging
     include BetweenMeals::Util
 
@@ -43,7 +43,7 @@ module TasteTester
       @status, @output = exec!(cmd, logger)
     rescue StandardError => e
       logger.error(e.message)
-      raise TasteTester::Exceptions::LocalLinkError
+      raise TasteTester::Exceptions::NoOp
     end
 
     private
