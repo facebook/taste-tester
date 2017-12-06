@@ -72,7 +72,7 @@ module TasteTester
     end
 
     def get_transport
-      if TasteTester::Config.transport.downcase == 'noop'
+      if TasteTester::Config.transport.casecmp('noop').zero?
         transport = TasteTester::NoOP.new
       else
         transport = TasteTester::SSH.new(@name)
