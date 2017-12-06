@@ -41,7 +41,7 @@ module TasteTester
       unless File.directory?(ref_dir)
         begin
           FileUtils.mkpath(ref_dir)
-        rescue => e
+        rescue StandardError => e
           logger.warn("Chef temp dir #{ref_dir} missing and can't be created")
           logger.warn(e)
         end
@@ -65,7 +65,7 @@ module TasteTester
         @addr = '::'
         begin
           @host = TasteTester::Config.my_hostname || Socket.gethostname
-        rescue
+        rescue StandardError
           logger.error('Unable to find fqdn')
           exit 1
         end
@@ -140,6 +140,7 @@ module TasteTester
         :role_dir => TasteTester::Config.roles,
         :cookbook_dirs => TasteTester::Config.cookbooks,
         :checksum_dir => TasteTester::Config.checksum_dir,
+        :config => TasteTester::Config.knife_config,
       )
       knife.write_user_config
     end

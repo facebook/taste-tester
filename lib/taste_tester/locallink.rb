@@ -41,7 +41,7 @@ module TasteTester
 
     def run!
       @status, @output = exec!(cmd, logger)
-    rescue => e
+    rescue StandardError => e
       logger.error(e.message)
       raise TasteTester::Exceptions::LocalLinkError
     end

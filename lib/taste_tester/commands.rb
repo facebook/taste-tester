@@ -162,7 +162,7 @@ module TasteTester
       client.skip_checks = true if TasteTester::Config.skip_repo_checks
       client.force = true if TasteTester::Config.force_upload
       client.upload
-    rescue => exception
+    rescue StandardError => exception
       # We're trying to recover from common chef-zero errors
       # Most of them happen due to half finished uploads, which leave
       # chef-zero in undefined state

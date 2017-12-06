@@ -29,13 +29,13 @@ module TasteTester
     include ::BetweenMeals::Util
 
     def initialize
-      ref_dir = File.dirname(File.expand_path(
-                               TasteTester::Config.ref_file,
-      ))
+      ref_dir = File.dirname(
+        File.expand_path(TasteTester::Config.ref_file),
+      )
       unless File.directory?(ref_dir)
         begin
           FileUtils.mkpath(ref_dir)
-        rescue => e
+        rescue StandardError => e
           logger.error("Chef temp dir #{ref_dir} missing and can't be created")
           logger.error(e)
           exit(1)
@@ -108,7 +108,7 @@ module TasteTester
 
     def self.read(key)
       JSON.parse(File.read(TasteTester::Config.ref_file))[key.to_s]
-    rescue => e
+    rescue StandardError => e
       logger.debug(e)
       nil
     end
@@ -122,7 +122,7 @@ module TasteTester
     def merge(vals)
       begin
         state = JSON.parse(File.read(TasteTester::Config.ref_file))
-      rescue
+      rescue StandardError
         state = {}
       end
       state.merge!(vals)
@@ -132,7 +132,7 @@ module TasteTester
       )
       ff.write(state.to_json)
       ff.close
-    rescue => e
+    rescue StandardError => e
       logger.error('Unable to write the reffile')
       logger.debug(e)
       exit 0

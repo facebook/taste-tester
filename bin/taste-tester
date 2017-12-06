@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-$LOAD_PATH.unshift(File.dirname(File.realpath(__FILE__)) + '/../lib')
+$LOAD_PATH.unshift(__dir__ + '/../lib')
 
 # rubocop:disable UnusedBlockArgument, AlignParameters
 
@@ -232,7 +232,7 @@ MODES:
     ) do |time|
       begin
         options[:testing_until] = Time.parse(time)
-      rescue
+      rescue StandardError
         logger.error("Invalid date: #{time}")
         exit 1
       end

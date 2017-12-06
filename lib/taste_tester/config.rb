@@ -41,6 +41,7 @@ module TasteTester
     timestamp false
     user 'root'
     ref_file "#{ENV['HOME']}/.chef/taste-tester-ref.json"
+    knife_config "#{ENV['HOME']}/.chef/knife-#{ENV['USER']}-taste-tester.rb"
     checksum_dir "#{ENV['HOME']}/.chef/checksums"
     skip_repo_checks false
     chef_client_command 'chef-client'
