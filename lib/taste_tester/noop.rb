@@ -43,7 +43,7 @@ module TasteTester
       @status, @output = exec!(cmd, logger)
     rescue StandardError => e
       logger.error(e.message)
-      raise TasteTester::Exceptions::NoOp
+      raise TasteTester::Exceptions::NoOpError
     end
 
     private
