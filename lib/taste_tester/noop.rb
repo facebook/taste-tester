@@ -34,9 +34,11 @@ module TasteTester
     def print_noop_warning
       # This needs to be a Class var as this class is initialized more
       # than once in a given tt run and we only want to warn once.
-      @@PRINTED_WARNING ||= logger.warn(
-        'No-op plugin active, no remote commands will be run!'
+      # rubocop:disable Style/ClassVars
+      @@printedwarning ||= logger.warn(
+        'No-op plugin active, no remote commands will be run!',
       )
+      # rubocop:enable Style/ClassVars
     end
 
     def add(string)
