@@ -25,9 +25,18 @@ module TasteTester
     attr_reader :output
 
     def initialize
+      print_noop_warning
       @host = 'localhost'
       @user = ENV['USER']
       @cmds = []
+    end
+
+    def print_noop_warning
+      # This needs to be a Class var as this class is initialized more
+      # than once in a given tt run and we only want to warn once.
+      @@PRINTED_WARNING ||= logger.warn(
+        'No-op plugin active, no remote commands will be run!'
+      )
     end
 
     def add(string)
@@ -40,14 +49,7 @@ module TasteTester
       run!
     end
 
-    def print_noop_warning
-      @@PRINTED_WARNING ||= logger.warn(
-        'No-op plugin active, no remote commands will be run!'
-      )
-    end
-
     def run!
-      print_noop_warning
       cmd
       [0, "# TasteTester by #{@user}"]
     end
