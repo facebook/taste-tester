@@ -20,5 +20,7 @@ module TasteTester
     end
     class LocalLinkError < StandardError
     end
+    class NoOpError < StandardError
+    end
   end
 end
