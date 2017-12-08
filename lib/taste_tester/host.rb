@@ -73,14 +73,14 @@ module TasteTester
     end
 
     def get_transport
-      if TasteTester::Config.transport.casecmp('locallink').zero?
-        transport = TasteTester::LocalLink.new
-      elsif TasteTester::Config.transport.casecmp('noop').zero?
-        transport = TasteTester::NoOp.new
+      case TasteTester::Config.transport
+      when 'locallink'
+        TasteTester::LocalLink.new
+      when 'noop'
+        TasteTester::NoOp.new
       else
-        transport = TasteTester::SSH.new(@name)
+        TasteTester::SSH.new(@name)
       end
-      transport
     end
 
     def test

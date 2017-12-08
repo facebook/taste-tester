@@ -36,30 +36,11 @@ module TasteTester
     alias << add
 
     def run
-      @status, @output = exec(cmd, logger)
+      run!
     end
 
     def run!
-      @status, @output = exec!(cmd, logger)
-    rescue StandardError => e
-      logger.error(e.message)
-      raise TasteTester::Exceptions::NoOpError
-    end
-
-    private
-
-    def cmd
-      @cmds.each do |cmd|
-        logger.info("Will run: '#{cmd}' on #{@host}")
-      end
-      cmds = @cmds.join(' && ')
-      if TasteTester::Config.user != 'root'
-        cc = Base64.encode64(cmds).delete("\n")
-        cmd = "echo '#{cc}' | base64 --decode | sudo bash -x"
-      else
-        cmd = cmds.to_s
-      end
-      cmd
+      logger.info('NoOP TT Run')
     end
   end
 end
