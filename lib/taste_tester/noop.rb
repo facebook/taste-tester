@@ -51,17 +51,6 @@ module TasteTester
       @cmds.each do |cmd|
         logger.info("No-op, faking run of: '#{cmd}' on #{@host}")
       end
-      cmds = @cmds.join(' && ')
-      cmd = "#{TasteTester::Config.ssh_command} " +
-            "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
-            "#{TasteTester::Config.user}@#{@host} "
-      if TasteTester::Config.user != 'root'
-        cc = Base64.encode64(cmds).delete("\n")
-        cmd += "\"echo '#{cc}' | base64 --decode | sudo bash -x\""
-      else
-        cmd += "\'#{cmds}\'"
-      end
-      cmd
     end
   end
 end
