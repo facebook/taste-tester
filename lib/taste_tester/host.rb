@@ -72,11 +72,18 @@ module TasteTester
       end
     end
 
+    def print_noop_warning
+      @PRINTED_WARNING ||= logger.warn(
+        'No-op plugin active, no remote commands will be run!'
+      )
+    end
+
     def get_transport
       case TasteTester::Config.transport
       when 'locallink'
         TasteTester::LocalLink.new
       when 'noop'
+        print_noop_warning
         TasteTester::NoOp.new
       else
         TasteTester::SSH.new(@name)

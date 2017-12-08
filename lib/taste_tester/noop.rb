@@ -25,7 +25,6 @@ module TasteTester
     attr_reader :output
 
     def initialize
-      logger.info('No-op plugin active, no remote commands will be run!')
       @host = 'localhost'
       @user = ENV['USER']
       @cmds = []
