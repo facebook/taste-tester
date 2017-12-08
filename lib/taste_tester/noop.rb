@@ -26,6 +26,7 @@ module TasteTester
 
     def initialize
       @host = 'localhost'
+      @user = ENV['USER']
       @cmds = []
     end
 
@@ -40,7 +41,8 @@ module TasteTester
     end
 
     def run!
-      logger.info('NoOP TT Run')
+      logger.info('NoOp TT Run')
+      [0, "# TasteTester by #{@user}"]
     end
   end
 end
