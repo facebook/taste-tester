@@ -25,6 +25,7 @@ module TasteTester
     attr_reader :output
 
     def initialize
+      logger.info('No-op plugin active, no remote commands will be run!')
       @host = 'localhost'
       @user = ENV['USER']
       @cmds = []
@@ -41,8 +42,27 @@ module TasteTester
     end
 
     def run!
-      logger.info('NoOp TT Run')
+      cmd
       [0, "# TasteTester by #{@user}"]
+    end
+
+    private
+
+    def cmd
+      @cmds.each do |cmd|
+        logger.info("No-op, faking run of: '#{cmd}' on #{@host}")
+      end
+      cmds = @cmds.join(' && ')
+      cmd = "#{TasteTester::Config.ssh_command} " +
+            "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
+            "#{TasteTester::Config.user}@#{@host} "
+      if TasteTester::Config.user != 'root'
+        cc = Base64.encode64(cmds).delete("\n")
+        cmd += "\"echo '#{cc}' | base64 --decode | sudo bash -x\""
+      else
+        cmd += "\'#{cmds}\'"
+      end
+      cmd
     end
   end
 end
