@@ -40,7 +40,14 @@ module TasteTester
       run!
     end
 
+    def print_noop_warning
+      @@PRINTED_WARNING ||= logger.warn(
+        'No-op plugin active, no remote commands will be run!'
+      )
+    end
+
     def run!
+      print_noop_warning
       cmd
       [0, "# TasteTester by #{@user}"]
     end
