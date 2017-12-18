@@ -17,8 +17,6 @@
 
 $LOAD_PATH.unshift(__dir__ + '/../lib')
 
-# rubocop:disable UnusedBlockArgument, AlignParameters
-
 require 'rubygems'
 require 'time'
 require 'optparse'
@@ -219,16 +217,18 @@ MODES:
       options[:linkonly] = true
     end
 
-    opts.on(
-      '-L', '--locallink', 'Configure the local chef client without ssh.'
-    ) do
-      options[:locallink] = true
+    opts.on('--transport TRANSPORT', ['locallink', 'ssh', 'noop'],
+            "Set the transport\n" +
+            "\t\tssh       - [default] Use SSH to talk to remote host\n" +
+            "\t\tlocallink - Assume the remote host is ourself\n" +
+            "\t\tnoop      - Ignore all remote commands") do |transport|
+      options[:transport] = transport
     end
 
     opts.on(
       '-t', '--testing-timestamp TIME',
-        'Until when should the host remain in testing.' +
-        ' Anything parsable is ok, such as "5/18 4:35" or "16/9/13".'
+      'Until when should the host remain in testing.' +
+      ' Anything parsable is ok, such as "5/18 4:35" or "16/9/13".'
     ) do |time|
       begin
         options[:testing_until] = Time.parse(time)
@@ -240,8 +240,8 @@ MODES:
 
     opts.on(
       '-t', '--testing-time TIME',
-        'How long should the host remain in testing.' +
-        ' Takes a simple relative time string, such as "45m", "4h" or "2d".'
+      'How long should the host remain in testing.' +
+      ' Takes a simple relative time string, such as "45m", "4h" or "2d".'
     ) do |time|
       m = time.match(/^(\d+)([d|h|m]+)$/)
       if m
@@ -407,9 +407,6 @@ MODES:
   end
 end
 
-# Both versions of this trigger YodaCondition. :(
-# https://github.com/bbatsov/rubocop/issues/4433
-# rubocop:disable Style/YodaCondition
 if $PROGRAM_NAME == __FILE__
   include TasteTester
 end

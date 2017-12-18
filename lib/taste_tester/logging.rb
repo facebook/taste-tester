@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# rubocop:disable ClassVars, UnusedMethodArgument, UnusedBlockArgument
+# rubocop:disable ClassVars
 require 'logger'
 
 module TasteTester
@@ -50,14 +50,14 @@ module TasteTester
     def formatter
       return @@formatter_proc if @@formatter_proc
       if @@use_log_formatter
-        proc do |severity, datetime, progname, msg|
+        proc do |severity, datetime, _progname, msg|
           if severity == 'ERROR'
             msg = msg.red
           end
           "[#{datetime.strftime('%Y-%m-%dT%H:%M:%S%:z')}] #{severity}: #{msg}\n"
         end
       else
-        proc do |severity, datetime, progname, msg|
+        proc do |severity, _datetime, _progname, msg|
           msg.to_s.prepend("#{severity}: ") unless severity == 'WARN'
           if severity == 'ERROR'
             msg = msg.to_s.red
@@ -68,3 +68,4 @@ module TasteTester
     end
   end
 end
+# rubocop:enable ClassVars
