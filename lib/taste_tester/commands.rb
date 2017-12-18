@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# rubocop:disable UnusedBlockArgument, UnusedMethodArgument
 require 'taste_tester/server'
 require 'taste_tester/host'
 require 'taste_tester/config'
