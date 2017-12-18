@@ -1,3 +1,12 @@
+## 0.0.13
+* Add a NoOp transport
+* Replace `--locallink` with `--transport`
+* Add option to support tracking symlinks
+* Add option to allow specifying a knife config
+* Use /bin/echo rather than built-in for better cross-platform support
+* Add config file for taste-untester
+* Fix tunnel support
+
 ## 0.0.12
 * Check for chef-zero anywhere in PATH, not just two hard-coded directories
 * Windows support 
