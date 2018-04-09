@@ -106,6 +106,21 @@ module TasteTester
         TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
                                      tested_hosts)
       end
+      # strictly, hosts and tested_hosts should be sets to eliminate
+      # variance in order or duplicates. The exact comparison works
+      # because we're building the list in the same order
+      if tested_hosts == hosts
+        # no exceptions, complete success
+        exit(0)
+      end
+      if tested_hosts.empty?
+        # nothing worked, complete failure
+        exit(3)
+      end
+      # otherwise, we got a mix of success and failure. This isn't well
+      # defined so we'll be pessemistic, but give a different error
+      # code.
+      exit(2)
     end
 
     def self.untest
