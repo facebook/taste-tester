@@ -173,9 +173,6 @@ Naming/VariableNumber:
 Style/RegexpLiteral:
   EnforcedStyle: mixed
 
-Metrics/BlockLength:
-  Enabled: false
-
 Style/PercentLiteralDelimiters:
   PreferredDelimiters:
     default: {}

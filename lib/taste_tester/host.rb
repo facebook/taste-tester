@@ -223,7 +223,6 @@ module TasteTester
         url = "#{scheme}://#{@server.host}"
         url << ":#{TasteTester::State.port}" if TasteTester::State.port
       end
-      # rubocop:disable Metrics/LineLength
       ttconfig = <<-EOS
 # TasteTester by #{@user}
 # Prevent people from screwing up their permissions
@@ -239,7 +238,6 @@ ssl_verify_mode :verify_none
 ohai.plugin_path << '#{TasteTester::Config.chef_config_path}/ohai_plugins'
 
 EOS
-      # rubocop:enable Metrics/LineLength
 
       extra = TasteTester::Hooks.test_remote_client_rb_extra_code(@name)
       if extra
