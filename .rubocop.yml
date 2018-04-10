@@ -1,5 +1,5 @@
-AllCops:  
-  TargetRubyVersion: 2.1  
+AllCops:
+  TargetRubyVersion: 2.1
   Exclude:
     # template files named `rb` instead of `erb` are a sin against ruby-nature.
     - '**/templates/**/*.rb'#
@@ -129,7 +129,7 @@ Naming/HeredocDelimiterNaming:
 
 # This double-reports what happens in EmptyLines
 Layout/EmptyLineBetweenDefs:
-  Enabled: false      
+  Enabled: false
 
 #
 # Modified rules
@@ -147,6 +147,12 @@ Style/Documentation:
   Enabled: false
 
 TrailingCommaInLiteral:
+  EnforcedStyleForMultiline: comma
+
+TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: comma
 
 TrailingCommaInArguments:
