@@ -146,9 +146,6 @@ HashSyntax:
 Style/Documentation:
   Enabled: false
 
-TrailingCommaInLiteral:
-  EnforcedStyleForMultiline: comma
-
 TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: comma
 
