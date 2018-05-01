@@ -13,6 +13,9 @@ Gem::Specification.new do |s|
   s.executables = 'taste-tester'
   s.license = 'Apache'
   s.add_dependency 'between_meals', '>= 0.0.6'
+  # without an explicit dependency, json is resolved to 1.7.7 on Ruby 2.4
+  # which doesn't compile.
+  s.add_dependency 'json', '>= 2.0.0'
   %w{
     mixlib-config
     colorize

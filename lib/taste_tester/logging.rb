@@ -35,8 +35,8 @@ module TasteTester
       @logger ||= Logger.new(STDOUT)
     end
 
-    def self.formatterproc=(p)
-      @@formatter_proc = p
+    def self.formatterproc=(process)
+      @@formatter_proc = process
     end
 
     def self.use_log_formatter=(use_log_formatter)
