@@ -13,6 +13,7 @@ Gem::Specification.new do |s|
   s.executables = 'taste-tester'
   s.license = 'Apache'
   s.add_dependency 'between_meals', '>= 0.0.6'
+  s.add_dependency 'json', '>= 2.0.0'
   %w{
     mixlib-config
     colorize
