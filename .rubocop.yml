@@ -100,9 +100,6 @@ FileName:
 PerceivedComplexity:
   Enabled: false
 
-UnneededDisable:
-  Enabled: false
-
 # Seems buggy - https://github.com/bbatsov/rubocop/issues/2690
 MultilineOperationIndentation:
   Enabled: false

@@ -120,8 +120,8 @@ module TasteTester
         exit(3)
       end
       # Otherwise, we got a mix of success and failure due to being tested by
-      # another user. We'll be pessemistic and return an error because the intent
-      # to taste test the complete list was not successful.
+      # another user. We'll be pessemistic and return an error because the
+      # intent to taste test the complete list was not successful.
       # code.
       exit(2)
     end
