@@ -74,6 +74,13 @@ MODES:
     point some production server specified by -s to your virtual chef server for
     testing.  If you have you a plugin that uses the hookpoint, it'll may amend
     your commit message to denote the server you tested.
+    Returns:
+      0 Success.
+      1 Failure, e.g. host not reachable or usage error.
+      2 Partial success, mixture of success and failure due to hosts being taste
+        tested by other users.
+      3 All hosts were not taste-tested because they are being taste-tested by
+        other users.
 
   upload
     Sync your local repo to your virtual Chef server (i.e. just the first step

@@ -106,6 +106,24 @@ module TasteTester
         TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
                                      tested_hosts)
       end
+      # Strictly: hosts and tested_hosts should be sets to eliminate variance in
+      # order or duplicates. The exact comparison works here because we're
+      # building tested_hosts from hosts directly.
+      if tested_hosts == hosts
+        # No exceptions, complete success: every host listed is now configured
+        # to use our chef-zero instance.
+        exit(0)
+      end
+      if tested_hosts.empty?
+        # All requested hosts are being tested by another user. We didn't change
+        # their configuration.
+        exit(3)
+      end
+      # Otherwise, we got a mix of success and failure due to being tested by
+      # another user. We'll be pessemistic and return an error because the
+      # intent to taste test the complete list was not successful.
+      # code.
+      exit(2)
     end
 
     def self.untest
