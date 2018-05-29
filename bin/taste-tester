@@ -248,7 +248,7 @@ MODES:
     opts.on(
       '-t', '--testing-time TIME',
       'How long should the host remain in testing.' +
-      ' Takes a simple relative time string, such as "45m", "4h" or "2d".'
+      ' Takes a simple relative time string, such as "45m", "4h" or "1d".'
     ) do |time|
       m = time.match(/^(\d+)([d|h|m]+)$/)
       if m
