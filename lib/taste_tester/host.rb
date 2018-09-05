@@ -30,6 +30,9 @@ module TasteTester
   class Host
     include TasteTester::Logging
 
+    TASTE_TESTER_CONFIG = 'client-taste-tester.rb'
+    USER_PREABLE = '# TasteTester by '
+
     attr_reader :name
 
     def initialize(name, server)
@@ -101,23 +104,26 @@ module TasteTester
       transport = get_transport
 
       # see if someone else is taste-testing
-      transport << we_testing?
+      transport << we_testing
 
       transport << 'logger -t taste-tester Moving server into taste-tester' +
         " for #{@user}"
       transport << touchcmd
-      transport << "/bin/echo -n #{serialized_config} | base64 --decode" +
-        " > #{TasteTester::Config.chef_config_path}/client-taste-tester.rb"
-      transport << "rm -vf #{TasteTester::Config.chef_config_path}/" +
-        TasteTester::Config.chef_config
-      transport << "( ln -vs #{TasteTester::Config.chef_config_path}" +
-        "/client-taste-tester.rb #{TasteTester::Config.chef_config_path}/" +
+      # shell redirection is also racey, so make a temporary file first
+      transport << "tt=$(mktemp #{TasteTester::Config.chef_config_path}/" +
+        "#{TASTE_TESTER_CONFIG}.TMPXXXXXX)"
+      transport << "/bin/echo -n \"#{serialized_config}\" | base64 --decode" +
+        " > \"${tt}\""
+      # then rename it to replace any existing file
+      transport << "mv -f \"${tt}\" " +
+        "#{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}"
+      transport << "( ln -vsf #{TasteTester::Config.chef_config_path}" +
+        "/#{TASTE_TESTER_CONFIG} #{TasteTester::Config.chef_config_path}/" +
         "#{TasteTester::Config.chef_config}; true )"
 
-
       # look again to see if someone else is taste-testing. This is where
-      # we work out if we won, or lost a race with another user.
-      transport << we_testing?
+      # we work out if we won or lost a race with another user.
+      transport << we_testing
 
       transport.run
 
@@ -153,15 +159,12 @@ module TasteTester
       end
       config_prod = TasteTester::Config.chef_config.split('.').join('-prod.')
       [
-        "rm -vf #{TasteTester::Config.chef_config_path}/" +
-          TasteTester::Config.chef_config,
-        "rm -vf #{TasteTester::Config.chef_config_path}/client-taste-tester.rb",
-        "ln -vs #{TasteTester::Config.chef_config_path}/#{config_prod} " +
+        "ln -vsf #{TasteTester::Config.chef_config_path}/#{config_prod} " +
           "#{TasteTester::Config.chef_config_path}/" +
           TasteTester::Config.chef_config,
-        "rm -vf #{TasteTester::Config.chef_config_path}/client.pem",
-        "ln -vs #{TasteTester::Config.chef_config_path}/client-prod.pem " +
+        "ln -vsf #{TasteTester::Config.chef_config_path}/client-prod.pem " +
           "#{TasteTester::Config.chef_config_path}/client.pem",
+        "rm -vf #{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}",
         "rm -vf #{TasteTester::Config.timestamp_file}",
         'logger -t taste-tester Returning server to production',
       ].each do |cmd|
@@ -170,21 +173,19 @@ module TasteTester
       transport.run!
     end
 
-    def we_testing?
+    def we_testing
       config_file = "#{TasteTester::Config.chef_config_path}/" +
         TasteTester::Config.chef_config
       # Look for signature of TasteTester
-      # 1. Look for "# TasteTester by " line prefix
-      # 2. Assert presence of timestamp file using getline
-      # 3. See if user is us, or someone else
-      # 4. if someone else is testing: emit username, exit with code 42 which
+      # 1. Look for USER_PREABLE line prefix
+      # 2. See if user is us, or someone else
+      # 3. if someone else is testing: emit username, exit with code 42 which
       #    short circuits the test verb
       # This is written as a squiggly heredoc so the indentation of the awk is
       # preserved. Later we remove the newlines to make it a bit easier to read.
       shellcode = <<~EOF
-        awk "\\$0 ~ /^# TasteTester by /{
-          if (getline < \\"#{TasteTester::Config.timestamp_file}\\" >= 0 &&
-              \\$NF != \\"#{ENV['USER']}\\"){
+        awk "\\$0 ~ /^#{USER_PREABLE}/{
+          if (\\$NF != \\"#{@user}\\"){
             print \\$NF;
             exit 42
           }
@@ -229,7 +230,7 @@ module TasteTester
         url << ":#{TasteTester::State.port}" if TasteTester::State.port
       end
       ttconfig = <<-EOS
-# TasteTester by #{@user}
+#{USER_PREABLE}#{@user}
 # Prevent people from screwing up their permissions
 if Process.euid != 0
   puts 'Please run chef as root!'
