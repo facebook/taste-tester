@@ -1,7 +1,7 @@
 # rubocop:disable Metrics/BlockLength
 Gem::Specification.new do |s|
   s.name = 'taste_tester'
-  s.version = '0.0.13'
+  s.version = '0.0.14'
   s.homepage = 'https://github.com/facebook/taste-tester'
   s.platform = Gem::Platform::RUBY
   s.summary = 'Taste Tester'
