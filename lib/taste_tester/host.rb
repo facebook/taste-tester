@@ -23,6 +23,7 @@ require 'taste_tester/ssh'
 require 'taste_tester/noop'
 require 'taste_tester/locallink'
 require 'taste_tester/tunnel'
+require 'taste_tester/exceptions'
 
 module TasteTester
   # Manage state of the remote node
@@ -94,22 +95,42 @@ module TasteTester
         @tunnel.run
       end
 
-      @serialized_config = Base64.encode64(config).delete("\n")
+      serialized_config = Base64.encode64(config).delete("\n")
 
       # Then setup the testing
       transport = get_transport
 
+      # see if someone else is taste-testing
+      transport << we_testing?
+
       transport << 'logger -t taste-tester Moving server into taste-tester' +
         " for #{@user}"
       transport << touchcmd
-      transport << "/bin/echo -n '#{@serialized_config}' | base64 --decode" +
+      transport << "/bin/echo -n #{serialized_config} | base64 --decode" +
         " > #{TasteTester::Config.chef_config_path}/client-taste-tester.rb"
       transport << "rm -vf #{TasteTester::Config.chef_config_path}/" +
         TasteTester::Config.chef_config
       transport << "( ln -vs #{TasteTester::Config.chef_config_path}" +
         "/client-taste-tester.rb #{TasteTester::Config.chef_config_path}/" +
         "#{TasteTester::Config.chef_config}; true )"
-      transport.run!
+
+
+      # look again to see if someone else is taste-testing. This is where
+      # we work out if we won, or lost a race with another user.
+      transport << we_testing?
+
+      transport.run
+
+      case transport.status
+      when 0
+        # no problem, keep going.
+      when 42
+        raise TasteTester::Exceptions::AlreadyTestingError.new(
+          transport.output.chomp,
+        )
+      else
+        transport.error!
+      end
 
       # Then run any other stuff they wanted
       cmds = TasteTester::Hooks.test_remote_cmds(
@@ -149,43 +170,27 @@ module TasteTester
       transport.run!
     end
 
-    def who_is_testing
-      transport = get_transport
-      transport << 'grep "^# TasteTester by"' +
-        " #{TasteTester::Config.chef_config_path}/" +
+    def we_testing?
+      config_file = "#{TasteTester::Config.chef_config_path}/" +
         TasteTester::Config.chef_config
-      output = transport.run
-      if output.first.zero?
-        user = output.last.match(/# TasteTester by (.*)$/)
-        if user
-          return user[1]
-        end
-      end
-
-      # Legacy FB stuff, remove after migration. Safe for everyone else.
-      transport = get_transport
-      transport << "file #{TasteTester::Config.chef_config_path}/" +
-        TasteTester::Config.chef_config
-      output = transport.run
-      if output.first.zero?
-        user = output.last.match(/client-(.*)-(taste-tester|test).rb/)
-        if user
-          return user[1]
-        end
-      end
-
-      return nil
-    end
-
-    def in_test?
-      transport = get_transport
-      transport << "test -f #{TasteTester::Config.timestamp_file}"
-      if transport.run.first.zero? && who_is_testing &&
-          who_is_testing != ENV['USER']
-        true
-      else
-        false
-      end
+      # Look for signature of TasteTester
+      # 1. Look for "# TasteTester by " line prefix
+      # 2. Assert presence of timestamp file using getline
+      # 3. See if user is us, or someone else
+      # 4. if someone else is testing: emit username, exit with code 42 which
+      #    short circuits the test verb
+      # This is written as a squiggly heredoc so the indentation of the awk is
+      # preserved. Later we remove the newlines to make it a bit easier to read.
+      shellcode = <<~EOF
+        awk "\\$0 ~ /^# TasteTester by /{
+          if (getline < \\"#{TasteTester::Config.timestamp_file}\\" >= 0 &&
+              \\$NF != \\"#{ENV['USER']}\\"){
+            print \\$NF;
+            exit 42
+          }
+        }" #{config_file}
+      EOF
+      shellcode.delete("\n")
     end
 
     def keeptesting

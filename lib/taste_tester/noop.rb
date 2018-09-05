@@ -56,6 +56,10 @@ module TasteTester
       [0, "# TasteTester by #{@user}"]
     end
 
+    def error!
+      # never fails, but interface requires a definition
+    end
+
     private
 
     def cmd

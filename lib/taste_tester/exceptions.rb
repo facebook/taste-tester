@@ -22,5 +22,12 @@ module TasteTester
     end
     class NoOpError < StandardError
     end
+    class AlreadyTestingError < StandardError
+      attr_reader :username
+
+      def initialize(username)
+        @username = username
+      end
+    end
   end
 end

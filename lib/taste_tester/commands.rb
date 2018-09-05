@@ -19,6 +19,7 @@ require 'taste_tester/host'
 require 'taste_tester/config'
 require 'taste_tester/client'
 require 'taste_tester/logging'
+require 'taste_tester/exceptions'
 
 module TasteTester
   # Functionality dispatch
@@ -93,12 +94,11 @@ module TasteTester
       tested_hosts = []
       hosts.each do |hostname|
         host = TasteTester::Host.new(hostname, server)
-        if host.in_test?
-          username = host.who_is_testing
-          logger.error("User #{username} is already testing on #{hostname}")
-        else
+        begin
           host.test
           tested_hosts << hostname
+        rescue TasteTester::Exceptions::AlreadyTestingError => e
+          logger.error("User #{e.username} is already testing on #{hostname}")
         end
       end
       unless TasteTester::Config.skip_post_test_hook ||

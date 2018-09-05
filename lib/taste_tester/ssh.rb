@@ -22,7 +22,7 @@ module TasteTester
     include TasteTester::Logging
     include BetweenMeals::Util
 
-    attr_reader :output
+    attr_reader :output, :status
 
     def initialize(host, timeout = 5, tunnel = false)
       @host = host
@@ -43,7 +43,11 @@ module TasteTester
 
     def run!
       @status, @output = exec!(cmd, logger)
-    rescue StandardError => e
+    rescue StandardError
+      error!
+    end
+
+    def error!
       error = <<-MSG
 SSH returned error while connecting to #{TasteTester::Config.user}@#{@host}
 The host might be broken or your SSH access is not working properly
@@ -52,7 +56,6 @@ Try doing
 and come back once that works
 MSG
       error.lines.each { |x| logger.error x.strip }
-      logger.error(e.message)
       raise TasteTester::Exceptions::SshError
     end
 
