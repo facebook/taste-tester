@@ -146,7 +146,7 @@ module TasteTester
         @name,
       )
 
-      if cmds && cmds.any?
+      if cmds&.any?
         transport = get_transport
         cmds.each { |c| transport << c }
         transport.run!
@@ -185,14 +185,14 @@ module TasteTester
       #    short circuits the test verb
       # This is written as a squiggly heredoc so the indentation of the awk is
       # preserved. Later we remove the newlines to make it a bit easier to read.
-      shellcode = <<~EOF
+      shellcode = <<~ENDOFSHELLCODE
         awk "\\$0 ~ /^#{USER_PREAMBLE}/{
           if (\\$NF != \\"#{@user}\\"){
             print \\$NF;
             exit 42
           }
         }" #{config_file}
-      EOF
+      ENDOFSHELLCODE
       shellcode.delete("\n")
     end
 
@@ -231,21 +231,20 @@ module TasteTester
         url = +"#{scheme}://#{@server.host}"
         url << ":#{TasteTester::State.port}" if TasteTester::State.port
       end
-      ttconfig = <<-EOS
-#{USER_PREAMBLE}#{@user}
-# Prevent people from screwing up their permissions
-if Process.euid != 0
-  puts 'Please run chef as root!'
-  Process.exit!
-end
+      ttconfig = <<~ENDOFSCRIPT
+        #{USER_PREAMBLE}#{@user}
+        # Prevent people from screwing up their permissions
+        if Process.euid != 0
+          puts 'Please run chef as root!'
+          Process.exit!
+        end
 
-log_level :info
-log_location STDOUT
-chef_server_url '#{url}'
-ssl_verify_mode :verify_none
-ohai.plugin_path << '#{TasteTester::Config.chef_config_path}/ohai_plugins'
-
-EOS
+        log_level :info
+        log_location STDOUT
+        chef_server_url '#{url}'
+        ssl_verify_mode :verify_none
+        ohai.plugin_path << '#{TasteTester::Config.chef_config_path}/ohai_plugins'
+      ENDOFSCRIPT
 
       extra = TasteTester::Hooks.test_remote_client_rb_extra_code(@name)
       if extra

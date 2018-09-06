@@ -118,11 +118,8 @@ module TasteTester
     end
 
     def self.testing_end_time
-      if TasteTester::Config.testing_until
-        TasteTester::Config.testing_until
-      else
+      TasteTester::Config.testing_until ||
         Time.now + TasteTester::Config.testing_time
-      end
     end
   end
 end

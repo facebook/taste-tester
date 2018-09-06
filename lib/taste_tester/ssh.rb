@@ -50,13 +50,13 @@ module TasteTester
     end
 
     def error!
-      error = <<-MSG
+      error = <<-ERRORMESSAGE
 SSH returned error while connecting to #{TasteTester::Config.user}@#{@host}
 The host might be broken or your SSH access is not working properly
 Try doing
   #{TasteTester::Config.ssh_command} -v #{TasteTester::Config.user}@#{@host}
 and come back once that works
-MSG
+      ERRORMESSAGE
       error.lines.each { |x| logger.error x.strip }
       fail TasteTester::Exceptions::SshError
     end
