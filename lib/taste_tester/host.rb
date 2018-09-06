@@ -111,13 +111,13 @@ module TasteTester
       transport << 'logger -t taste-tester Moving server into taste-tester' +
         " for #{@user}"
       transport << touchcmd
-      # shell redirection is also racey, so make a temporary file first
+      # shell redirection is also racy, so make a temporary file first
       transport << "tt=$(mktemp #{TasteTester::Config.chef_config_path}/" +
         "#{TASTE_TESTER_CONFIG}.TMPXXXXXX)"
       transport << "/bin/echo -n \"#{serialized_config}\" | base64 --decode" +
-        ' > "${tt}"'
+        ' > "${tempconfig}"'
       # then rename it to replace any existing file
-      transport << 'mv -f "${tt}" ' +
+      transport << 'mv -f "${tempconfig}" ' +
         "#{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}"
       transport << "( ln -vsf #{TasteTester::Config.chef_config_path}" +
         "/#{TASTE_TESTER_CONFIG} #{TasteTester::Config.chef_config_path}/" +
@@ -248,17 +248,17 @@ module TasteTester
 
       extra = TasteTester::Hooks.test_remote_client_rb_extra_code(@name)
       if extra
-        ttconfig += <<-EOS
-# Begin user-hook specified code
-        #{extra}
-# End user-hook secified code
+        ttconfig += <<~ENDOFSCRIPT
+          # Begin user-hook specified code
+                  #{extra}
+          # End user-hook secified code
 
-        EOS
+        ENDOFSCRIPT
       end
 
-      ttconfig += <<-EOS
-puts 'INFO: Running on #{@name} in taste-tester by #{@user}'
-      EOS
+      ttconfig += <<~ENDOFSCRIPT
+        puts 'INFO: Running on #{@name} in taste-tester by #{@user}'
+      ENDOFSCRIPT
       return ttconfig
     end
   end

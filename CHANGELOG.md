@@ -1,10 +1,3 @@
-## 0.0.14
-* Always use the desired knife config (#87)
-* Return failure and partial failure on test (#88)
-* Fixed rubocop rules (#89)
-* Reduce example test time, inline with best security practices. (#91)
-* Eliminate race conditions in test (#92)
-
 ## 0.0.13
 * Add a NoOp transport
 * Replace `--locallink` with `--transport`
