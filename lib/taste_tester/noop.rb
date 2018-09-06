@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -54,6 +56,10 @@ module TasteTester
     def run!
       cmd
       [0, "# TasteTester by #{@user}"]
+    end
+
+    def error!
+      # never fails, but interface requires a definition
     end
 
     private

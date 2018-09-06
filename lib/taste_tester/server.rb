@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -158,7 +160,7 @@ module TasteTester
         extend ::TasteTester::Windows
         start_win_chef_zero_server
       else
-        cmd = "#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
+        cmd = +"#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
         if TasteTester::Config.chef_zero_logging
           cmd << " --log-file #{@log_file}" +
             ' --log-level debug'

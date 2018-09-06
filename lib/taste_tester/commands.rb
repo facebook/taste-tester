@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -19,6 +21,7 @@ require 'taste_tester/host'
 require 'taste_tester/config'
 require 'taste_tester/client'
 require 'taste_tester/logging'
+require 'taste_tester/exceptions'
 
 module TasteTester
   # Functionality dispatch
@@ -65,7 +68,7 @@ module TasteTester
       unless TasteTester::Config.yes
         printf("Set #{TasteTester::Config.servers} to test mode? [y/N] ")
         ans = STDIN.gets.chomp
-        exit(1) unless ans =~ /^[yY](es)?$/
+        exit(1) unless ans.match?(/^[yY](es)?$/)
       end
       if TasteTester::Config.linkonly && TasteTester::Config.really
         logger.warn('Skipping upload at user request... potentially dangerous!')
@@ -93,12 +96,11 @@ module TasteTester
       tested_hosts = []
       hosts.each do |hostname|
         host = TasteTester::Host.new(hostname, server)
-        if host.in_test?
-          username = host.who_is_testing
-          logger.error("User #{username} is already testing on #{hostname}")
-        else
+        begin
           host.test
           tested_hosts << hostname
+        rescue TasteTester::Exceptions::AlreadyTestingError => e
+          logger.error("User #{e.username} is already testing on #{hostname}")
         end
       end
       unless TasteTester::Config.skip_post_test_hook ||

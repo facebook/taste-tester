@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -28,16 +30,16 @@ require 'taste_tester/commands'
 require 'taste_tester/hooks'
 require 'taste_tester/exceptions'
 
-include TasteTester::Logging
-
-if ENV['USER'] == 'root'
-  logger.warn('You should not be running as root')
-  exit(1)
-end
-
 # Command line parsing and param descriptions
 module TasteTester
+  include TasteTester::Logging
+
   verify = 'Verify your changes were actually applied as intended!'.red
+
+  if ENV['USER'] == 'root'
+    logger.warn('You should not be running as root')
+    exit(1)
+  end
 
   # Do an initial read of the config file if it's in the default place, so
   # that if people override chef_client_command the help message is correct.
@@ -48,7 +50,7 @@ module TasteTester
   end
 
   cmd = TasteTester::Config.chef_client_command
-  description = <<-EOF
+  description = <<-ENDOFDESCRIPTION
 Welcome to taste-tester!
 
 Usage: taste-tester <mode> [<options>]
@@ -118,7 +120,7 @@ MODES:
     You probably don't want this. It will restart up the chef-zero server on
     your localhost. taste-tester dynamically starts this if it's down, so there
     should be no need to do this manually.
-  EOF
+  ENDOFDESCRIPTION
 
   mode = ARGV.shift unless !ARGV.empty? && ARGV[0].start_with?('-')
 
@@ -412,8 +414,8 @@ MODES:
   rescue TasteTester::Exceptions::SshError
     exit(1)
   end
-end
 
-if $PROGRAM_NAME == __FILE__
-  include TasteTester
+  if $PROGRAM_NAME == __FILE__
+    include TasteTester
+  end
 end

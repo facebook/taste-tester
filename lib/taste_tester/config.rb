@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -116,11 +118,8 @@ module TasteTester
     end
 
     def self.testing_end_time
-      if TasteTester::Config.testing_until
-        TasteTester::Config.testing_until
-      else
+      TasteTester::Config.testing_until ||
         Time.now + TasteTester::Config.testing_time
-      end
     end
   end
 end

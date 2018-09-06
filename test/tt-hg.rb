@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 chef_zero_path 'bundle exec chef-zero'
 repo '/tmp/ops'
 repo_type 'hg'

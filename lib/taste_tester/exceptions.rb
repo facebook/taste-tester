@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -21,6 +23,13 @@ module TasteTester
     class LocalLinkError < StandardError
     end
     class NoOpError < StandardError
+    end
+    class AlreadyTestingError < StandardError
+      attr_reader :username
+
+      def initialize(username)
+        @username = username
+      end
     end
   end
 end
