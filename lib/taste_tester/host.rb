@@ -31,7 +31,7 @@ module TasteTester
     include TasteTester::Logging
 
     TASTE_TESTER_CONFIG = 'client-taste-tester.rb'
-    USER_PREABLE = '# TasteTester by '
+    USER_PREAMBLE = '# TasteTester by '
 
     attr_reader :name
 
@@ -177,14 +177,14 @@ module TasteTester
       config_file = "#{TasteTester::Config.chef_config_path}/" +
         TasteTester::Config.chef_config
       # Look for signature of TasteTester
-      # 1. Look for USER_PREABLE line prefix
+      # 1. Look for USER_PREAMBLE line prefix
       # 2. See if user is us, or someone else
       # 3. if someone else is testing: emit username, exit with code 42 which
       #    short circuits the test verb
       # This is written as a squiggly heredoc so the indentation of the awk is
       # preserved. Later we remove the newlines to make it a bit easier to read.
       shellcode = <<~EOF
-        awk "\\$0 ~ /^#{USER_PREABLE}/{
+        awk "\\$0 ~ /^#{USER_PREAMBLE}/{
           if (\\$NF != \\"#{@user}\\"){
             print \\$NF;
             exit 42
@@ -230,7 +230,7 @@ module TasteTester
         url << ":#{TasteTester::State.port}" if TasteTester::State.port
       end
       ttconfig = <<-EOS
-#{USER_PREABLE}#{@user}
+#{USER_PREAMBLE}#{@user}
 # Prevent people from screwing up their permissions
 if Process.euid != 0
   puts 'Please run chef as root!'
