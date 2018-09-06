@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # rubocop:disable Metrics/BlockLength
 Gem::Specification.new do |s|
   s.name = 'taste_tester'

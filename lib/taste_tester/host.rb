@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -113,9 +115,9 @@ module TasteTester
       transport << "tt=$(mktemp #{TasteTester::Config.chef_config_path}/" +
         "#{TASTE_TESTER_CONFIG}.TMPXXXXXX)"
       transport << "/bin/echo -n \"#{serialized_config}\" | base64 --decode" +
-        " > \"${tt}\""
+        ' > "${tt}"'
       # then rename it to replace any existing file
-      transport << "mv -f \"${tt}\" " +
+      transport << 'mv -f "${tt}" ' +
         "#{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}"
       transport << "( ln -vsf #{TasteTester::Config.chef_config_path}" +
         "/#{TASTE_TESTER_CONFIG} #{TasteTester::Config.chef_config_path}/" +
@@ -130,10 +132,10 @@ module TasteTester
       case transport.status
       when 0
         # no problem, keep going.
+        nil
       when 42
-        raise TasteTester::Exceptions::AlreadyTestingError.new(
-          transport.output.chomp,
-        )
+        fail TasteTester::Exceptions::AlreadyTestingError,
+             transport.output.chomp
       else
         transport.error!
       end
@@ -226,7 +228,7 @@ module TasteTester
       if TasteTester::Config.use_ssh_tunnels
         url = "#{scheme}://localhost:#{@tunnel.port}"
       else
-        url = "#{scheme}://#{@server.host}"
+        url = +"#{scheme}://#{@server.host}"
         url << ":#{TasteTester::State.port}" if TasteTester::State.port
       end
       ttconfig = <<-EOS

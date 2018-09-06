@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -66,7 +68,7 @@ module TasteTester
       unless TasteTester::Config.yes
         printf("Set #{TasteTester::Config.servers} to test mode? [y/N] ")
         ans = STDIN.gets.chomp
-        exit(1) unless ans =~ /^[yY](es)?$/
+        exit(1) unless ans.match?(/^[yY](es)?$/)
       end
       if TasteTester::Config.linkonly && TasteTester::Config.really
         logger.warn('Skipping upload at user request... potentially dangerous!')

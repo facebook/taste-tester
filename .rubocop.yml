@@ -120,10 +120,6 @@ Performance/RedundantMerge:
 Style/ConditionalAssignment:
   Enabled: false
 
-# Heredocs are fine with "EOF"
-Naming/HeredocDelimiterNaming:
-  Enabled: false
-
 # This double-reports what happens in EmptyLines
 Layout/EmptyLineBetweenDefs:
   Enabled: false
@@ -143,10 +139,7 @@ HashSyntax:
 Style/Documentation:
   Enabled: false
 
-TrailingCommaInArrayLiteral:
-  EnforcedStyleForMultiline: comma
-
-TrailingCommaInHashLiteral:
+TrailingCommaInLiteral:
   EnforcedStyleForMultiline: comma
 
 TrailingCommaInArguments:
@@ -164,7 +157,7 @@ Style/SignalException:
 Style/NumericLiteralPrefix:
   Enabled: false
 
-Naming/VariableNumber:
+Style/VariableNumber:
   Enabled: false
 
 Style/RegexpLiteral:
@@ -178,12 +171,4 @@ Style/PercentLiteralDelimiters:
 
 # no, we're not putting parens around `lazy`
 Lint/AmbiguousBlockAssociation:
-  Enabled: false
-
-# we do this all over the place
-Style/MixinUsage:
-  Enabled: false
-
-# this is misfiring in multiple cookbooks
-Layout/EmptyLinesAroundArguments:
   Enabled: false

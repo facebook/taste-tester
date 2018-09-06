@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -41,13 +43,13 @@ module TasteTester
 
     def run!
       @status, @output = exec!(cmd, logger)
-    rescue StandardError => e
+    rescue StandardError
       error!
     end
 
     def error!
       logger.error(e.message)
-      raise TasteTester::Exceptions::LocalLinkError
+      fail TasteTester::Exceptions::LocalLinkError
     end
 
     private

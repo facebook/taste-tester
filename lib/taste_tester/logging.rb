@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -58,7 +60,7 @@ module TasteTester
         end
       else
         proc do |severity, _datetime, _progname, msg|
-          msg.to_s.prepend("#{severity}: ") unless severity == 'WARN'
+          msg.dup.to_s.prepend("#{severity}: ") unless severity == 'WARN'
           if severity == 'ERROR'
             msg = msg.to_s.red
           end

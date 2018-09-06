@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -56,7 +58,7 @@ Try doing
 and come back once that works
 MSG
       error.lines.each { |x| logger.error x.strip }
-      raise TasteTester::Exceptions::SshError
+      fail TasteTester::Exceptions::SshError
     end
 
     private
