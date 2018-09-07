@@ -112,12 +112,12 @@ module TasteTester
         " for #{@user}"
       transport << touchcmd
       # shell redirection is also racy, so make a temporary file first
-      transport << "tt=$(mktemp #{TasteTester::Config.chef_config_path}/" +
+      transport << "tmpconf=$(mktemp #{TasteTester::Config.chef_config_path}/" +
         "#{TASTE_TESTER_CONFIG}.TMPXXXXXX)"
       transport << "/bin/echo -n \"#{serialized_config}\" | base64 --decode" +
-        ' > "${tempconfig}"'
+        ' > "${tmpconf}"'
       # then rename it to replace any existing file
-      transport << 'mv -f "${tempconfig}" ' +
+      transport << 'mv -f "${tmpconf}" ' +
         "#{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}"
       transport << "( ln -vsf #{TasteTester::Config.chef_config_path}" +
         "/#{TASTE_TESTER_CONFIG} #{TasteTester::Config.chef_config_path}/" +
