@@ -125,8 +125,9 @@ module TasteTester
 
     def self.running?
       if TasteTester::State.port
-        return port_open?(TasteTester::State.port)
+        return chef_zero_running?(TasteTester::State.port)
       end
+
       false
     end
 

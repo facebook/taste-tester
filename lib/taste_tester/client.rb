@@ -57,6 +57,7 @@ module TasteTester
       unless @repo.exists?
         fail "Could not open repo from #{TasteTester::Config.repo}"
       end
+
       @track_symlinks = TasteTester::Config.track_symlinks
     end
 
