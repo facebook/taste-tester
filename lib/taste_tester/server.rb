@@ -125,7 +125,8 @@ module TasteTester
 
     def self.running?
       if TasteTester::State.port
-        return chef_zero_running?(TasteTester::State.port)
+        return chef_zero_running?(TasteTester::State.port,
+                                  TasteTester::Config.use_ssl)
       end
 
       false
