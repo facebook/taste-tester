@@ -31,6 +31,7 @@ module TasteTester
     def self.start
       server = TasteTester::Server.new
       return if TasteTester::Server.running?
+
       server.start
     end
 

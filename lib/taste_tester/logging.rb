@@ -51,6 +51,7 @@ module TasteTester
 
     def formatter
       return @@formatter_proc if @@formatter_proc
+
       if @@use_log_formatter
         proc do |severity, datetime, _progname, msg|
           if severity == 'ERROR'
