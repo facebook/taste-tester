@@ -41,9 +41,9 @@ See the help for futher information.
 
 ## Prerequisites
 
-* Taste Tester assumes that /etc/chef/client.rb and /etc/chef/client.pem on your
-servers is a symlink and that your real config is /etc/chef/client-prod.rb and
-/etc/chef/client-prod.pem, respectively.
+* Taste Tester assumes that `/etc/chef/client.rb` and `/etc/chef/client.pem` on your
+servers is a symlink and that your real config is `/etc/chef/client-prod.rb` and
+`/etc/chef/client-prod.pem`, respectively.
 
 * Taste Tester assumes that it's generally safe to "go back" to production. I.e.
 We set things up so you can set a cronjob to un-taste-test a server after the
@@ -79,15 +79,14 @@ is also killing the ssh tunnel whose PID is in `/etc/chef/test_timestamp`
 ## Config file
 
 The default config file is `/etc/taste-tester-config.rb` but you may use -c to
-specify another. The config file works the same as client.rb does for Chef -
-there are a series of keywords that take an arguement and anything else is just
+specify another. The config file works the same as `client.rb` does for Chef -
+there are a series of keywords that take an argument and anything else is just
 standard Ruby.
 
 All command-line options are available in the config file:
 * debug (bool, default: `false`)
 * timestamp (bool, default: `false`)
 * config_file (string, default: `/etc/taste-tester-config.rb`)
-* plugin_path (string, default: `/etc/taste-tester-plugin.rb`)
 * repo (string, default: `#{ENV['HOME']}/ops`)
 * testing_time (int, default: `3600`)
 * chef_client_command (strng, default: `chef-client`)
@@ -106,6 +105,8 @@ The following options are also available:
 * role_dir - A directory of roles, relative to base_dir. Default: `roles`
 * databag_dir - A directory of databags, relative to base_dir.
   Default: `databags`
+* plugin_path - A ruby file containing plugin code to extend the functionality
+  of taste-tester, (e.g. `plugin_path /etc/taste-tester-plugin.rb`)
 * ref_file - The file to store the last git revision we uploaded in. Default:
   `#{ENV['HOME']}/.chef/taste-tester-ref.txt`
 * checksum_dir - The checksum directory to put in knife.conf for users. Default:
@@ -150,3 +151,18 @@ Stuff to do after putting all hosts in test mode.
 * self.repo_checks(dryrun, repo)
 
 Additional checks you want to do on the repo as sanity checks.
+
+**Plugin example**
+
+This is example code to add a user-defined string to `client-taste-tester.rb` on
+the remote system:
+```
+Hooks.class_eval do
+  def self.test_remote_client_rb_extra_code(_hostname)
+    %(
+      # This comment gets added to client-taste-tester.rb
+      # This one too.
+      )
+  end
+end
+```
