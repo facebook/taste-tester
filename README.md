@@ -87,6 +87,7 @@ All command-line options are available in the config file:
 * debug (bool, default: `false`)
 * timestamp (bool, default: `false`)
 * config_file (string, default: `/etc/taste-tester-config.rb`)
+* plugin_path (string, no default)
 * repo (string, default: `#{ENV['HOME']}/ops`)
 * testing_time (int, default: `3600`)
 * chef_client_command (strng, default: `chef-client`)
@@ -105,8 +106,6 @@ The following options are also available:
 * role_dir - A directory of roles, relative to base_dir. Default: `roles`
 * databag_dir - A directory of databags, relative to base_dir.
   Default: `databags`
-* plugin_path - A ruby file containing plugin code to extend the functionality
-  of taste-tester, (e.g. `plugin_path /etc/taste-tester-plugin.rb`)
 * ref_file - The file to store the last git revision we uploaded in. Default:
   `#{ENV['HOME']}/.chef/taste-tester-ref.txt`
 * checksum_dir - The checksum directory to put in knife.conf for users. Default:
@@ -154,8 +153,8 @@ Additional checks you want to do on the repo as sanity checks.
 
 **Plugin example**
 
-This is example code to add a user-defined string to `client-taste-tester.rb` on
-the remote system:
+This is an example `/etc/taste-tester-plugin.rb` to add a user-defined string
+to `client-taste-tester.rb` on the remote system:
 ```
 Hooks.class_eval do
   def self.test_remote_client_rb_extra_code(_hostname)
@@ -166,3 +165,5 @@ Hooks.class_eval do
   end
 end
 ```
+Be sure to pass this plugin file as `-p` on the command line or set it as 
+`plugin_path` in your `taste-tester-config.rb` file.
