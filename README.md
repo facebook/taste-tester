@@ -165,5 +165,5 @@ Hooks.class_eval do
   end
 end
 ```
-Be sure to pass this plugin file as `-p` on the command line or set it as 
+Be sure to pass this plugin file with `-p` on the command line or set it as 
 `plugin_path` in your `taste-tester-config.rb` file.
