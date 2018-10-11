@@ -68,11 +68,12 @@ module TasteTester
     end
 
     def upload
-      checks unless @skip_checks
-
-      logger.info("Last commit: #{@repo.head_rev} " +
-        "'#{@repo.last_msg.split("\n").first}'" +
-        " by #{@repo.last_author[:email]}")
+      unless @skip_checks
+        checks
+        logger.info("Last commit: #{@repo.head_rev} " +
+          "'#{@repo.last_msg.split("\n").first}'" +
+          " by #{@repo.last_author[:email]}")
+      end
 
       if @force || !@server.latest_uploaded_ref
         logger.info('Full upload forced') if @force
