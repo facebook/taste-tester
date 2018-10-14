@@ -67,7 +67,7 @@ module TasteTester
       unless TasteTester::Config.yes
         printf("Set #{TasteTester::Config.servers} to test mode? [y/N] ")
         ans = STDIN.gets.chomp
-        exit(1) unless ans.match?(/^[yY](es)?$/)
+        exit(1) unless ans =~ /^[yY](es)?$/
       end
       if TasteTester::Config.linkonly && TasteTester::Config.really
         logger.warn('Skipping upload at user request... potentially dangerous!')
