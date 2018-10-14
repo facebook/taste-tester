@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # vim: syntax=ruby:expandtab:shiftwidth=2:softtabstop=2:tabstop=2
 
 # Copyright 2013-present Facebook
@@ -32,8 +30,8 @@ module TasteTester
   class Host
     include TasteTester::Logging
 
-    TASTE_TESTER_CONFIG = 'client-taste-tester.rb'
-    USER_PREAMBLE = '# TasteTester by '
+    TASTE_TESTER_CONFIG = 'client-taste-tester.rb'.freeze
+    USER_PREAMBLE = '# TasteTester by '.freeze
 
     attr_reader :name
 
