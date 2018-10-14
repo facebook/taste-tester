@@ -30,8 +30,8 @@ module TasteTester
   class Host
     include TasteTester::Logging
 
-    TASTE_TESTER_CONFIG = 'client-taste-tester.rb'
-    USER_PREAMBLE = '# TasteTester by '
+    TASTE_TESTER_CONFIG = 'client-taste-tester.rb'.freeze
+    USER_PREAMBLE = '# TasteTester by '.freeze
 
     attr_reader :name
 
