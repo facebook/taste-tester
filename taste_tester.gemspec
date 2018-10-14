@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/BlockLength
 Gem::Specification.new do |s|
   s.name = 'taste_tester'
   s.version = '0.0.13'
@@ -25,11 +24,10 @@ Gem::Specification.new do |s|
     s.add_dependency dep
   end
   %w{
-    rubocop
     chef-zero
     knife-solo
   }.each do |dep|
     s.add_development_dependency dep
   end
+  s.add_development_dependency 'rubocop', '= 0.49.1'
 end
-# rubocop:enable Metrics/BlockLength
