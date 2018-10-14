@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 Gem::Specification.new do |s|
   s.name = 'taste_tester'
   s.version = '0.0.13'
