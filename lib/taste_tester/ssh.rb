@@ -43,8 +43,8 @@ module TasteTester
 
     def run!
       @status, @output = exec!(cmd, logger)
-    rescue StandardError, e
-      logger.exception(e)
+    rescue StandardError => e
+      logger.error(e.message)
       error!
     end
 
