@@ -24,13 +24,14 @@ module TasteTester
     include TasteTester::Logging
     include BetweenMeals::Util
 
-    attr_reader :output
+    attr_reader :output, :status
 
     def initialize
       print_noop_warning
       @host = 'localhost'
       @user = ENV['USER']
       @cmds = []
+      @status = 0
     end
 
     def print_noop_warning
