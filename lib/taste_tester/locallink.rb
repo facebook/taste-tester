@@ -22,7 +22,7 @@ module TasteTester
     include TasteTester::Logging
     include BetweenMeals::Util
 
-    attr_reader :output
+    attr_reader :output, :status
 
     def initialize
       @host = 'localhost'
