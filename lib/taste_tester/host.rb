@@ -125,15 +125,14 @@ module TasteTester
       # we work out if we won or lost a race with another user.
       transport << we_testing
 
-      transport.run
+      status, output = transport.run
 
-      case transport.status
+      case status
       when 0
         # no problem, keep going.
         nil
       when 42
-        fail TasteTester::Exceptions::AlreadyTestingError,
-             transport.output.chomp
+        fail TasteTester::Exceptions::AlreadyTestingError, output.chomp
       else
         transport.error!
       end
