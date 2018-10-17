@@ -22,7 +22,7 @@ module TasteTester
     include TasteTester::Logging
     include BetweenMeals::Util
 
-    attr_reader :output
+    attr_reader :output, :status
 
     def initialize
       @host = 'localhost'
@@ -41,12 +41,12 @@ module TasteTester
 
     def run!
       @status, @output = exec!(cmd, logger)
-    rescue StandardError
+    rescue StandardError => e
+      logger.error(e.message)
       error!
     end
 
     def error!
-      logger.error(e.message)
       fail TasteTester::Exceptions::LocalLinkError
     end
 
