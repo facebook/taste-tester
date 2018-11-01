@@ -167,3 +167,7 @@ end
 ```
 Be sure to pass this plugin file with `-p` on the command line or set it as 
 `plugin_path` in your `taste-tester-config.rb` file.
+
+## License
+
+See the `LICENSE` file.
