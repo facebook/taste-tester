@@ -32,7 +32,7 @@ require 'taste_tester/exceptions'
 
 # Command line parsing and param descriptions
 module TasteTester
-  include TasteTester::Logging
+  extend TasteTester::Logging
 
   verify = 'Verify your changes were actually applied as intended!'.red
 
