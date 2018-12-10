@@ -83,6 +83,14 @@ module TasteTester
       write(:ref, ref)
     end
 
+    def last_upload_time
+      TasteTester::State.read(:last_upload_time)
+    end
+
+    def last_upload_time=(time)
+      write(:last_upload_time, time)
+    end
+
     def update(vals)
       merge(vals)
     end

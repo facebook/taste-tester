@@ -58,6 +58,7 @@ module TasteTester
     my_hostname nil
     track_symlinks false
     transport 'ssh'
+    no_repo false
 
     skip_pre_upload_hook false
     skip_post_upload_hook false
