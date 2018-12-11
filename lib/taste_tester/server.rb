@@ -121,6 +121,14 @@ module TasteTester
       @state.ref = ref
     end
 
+    def last_upload_time
+      @state.last_upload_time
+    end
+
+    def last_upload_time=(time)
+      @state.last_upload_time = time
+    end
+
     def self.running?
       if TasteTester::State.port
         return chef_zero_running?(TasteTester::State.port,

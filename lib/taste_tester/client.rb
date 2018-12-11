@@ -47,12 +47,16 @@ module TasteTester
         :config => TasteTester::Config.knife_config,
       )
       @knife.write_user_config
-      @repo = BetweenMeals::Repo.get(
-        TasteTester::Config.repo_type,
-        TasteTester::Config.repo,
-        logger,
-      )
-      unless @repo.exists?
+      if TasteTester::Config.no_repo
+        @repo = nil
+      else
+        @repo = BetweenMeals::Repo.get(
+          TasteTester::Config.repo_type,
+          TasteTester::Config.repo,
+          logger,
+        )
+      end
+      if @repo && !@repo.exists?
         fail "Could not open repo from #{TasteTester::Config.repo}"
       end
 
@@ -66,26 +70,30 @@ module TasteTester
     end
 
     def upload
-      checks unless @skip_checks
+      head_rev = nil
+      if @repo
+        head_rev = @repo.head_rev
+        checks unless @skip_checks
+        logger.info("Last commit: #{head_rev} " +
+          "'#{@repo.last_msg.split("\n").first}'" +
+          " by #{@repo.last_author[:email]}")
+      end
 
-      logger.info("Last commit: #{@repo.head_rev} " +
-        "'#{@repo.last_msg.split("\n").first}'" +
-        " by #{@repo.last_author[:email]}")
-
-      if @force || !@server.latest_uploaded_ref
+      if @force || !@server.latest_uploaded_ref || !@repo
         logger.info('Full upload forced') if @force
+        logger.info('No repo, doing full upload') unless @repo
         unless TasteTester::Config.skip_pre_upload_hook
           TasteTester::Hooks.pre_upload(TasteTester::Config.dryrun,
                                         @repo,
                                         nil,
-                                        @repo.head_rev)
+                                        head_rev)
         end
         time(logger) { full }
         unless TasteTester::Config.skip_post_upload_hook
           TasteTester::Hooks.post_upload(TasteTester::Config.dryrun,
                                          @repo,
                                          nil,
-                                         @repo.head_rev)
+                                         head_rev)
         end
       else
         # Since we also upload the index, we always need to run the
@@ -95,7 +103,7 @@ module TasteTester
           TasteTester::Hooks.pre_upload(TasteTester::Config.dryrun,
                                         @repo,
                                         @server.latest_uploaded_ref,
-                                        @repo.head_rev)
+                                        head_rev)
         end
         begin
           time(logger) { partial }
@@ -107,11 +115,12 @@ module TasteTester
           TasteTester::Hooks.post_upload(TasteTester::Config.dryrun,
                                          @repo,
                                          @server.latest_uploaded_ref,
-                                         @repo.head_rev)
+                                         head_rev)
         end
       end
 
-      @server.latest_uploaded_ref = @repo.head_rev
+      @server.latest_uploaded_ref = head_rev
+      @server.last_upload_time = Time.new.strftime('%Y-%m-%d %H:%M:%S')
     end
 
     private

@@ -267,7 +267,7 @@ MODES:
 
     opts.on(
       '-r', '--repo DIR',
-      "Custom repo location, current deafult is #{TasteTester::Config.repo}." +
+      "Custom repo location, current default is #{TasteTester::Config.repo}." +
         ' Works on upload and test.'
     ) do |dir|
       options[:repo] = dir
@@ -278,6 +278,16 @@ MODES:
       'Override repo type, default is auto.',
     ) do |type|
       options[:repo_type] = type
+    end
+
+    opts.on(
+      '--clowntown-no-repo', 'This option enables taste-tester to run ' +
+      'without a SCM repo of any sort. This has negative implications like ' +
+      'always doing a full upload. This option is here for weird corner ' +
+      'cases like having to sync out the export of a repo, but is not ' +
+      'generally a good idea or well supported. Use at your own risk.'
+    ) do
+      options[:no_repo] = true
     end
 
     opts.on(

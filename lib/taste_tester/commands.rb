@@ -47,7 +47,12 @@ module TasteTester
       server = TasteTester::Server.new
       if TasteTester::Server.running?
         logger.warn("Local taste-tester server running on port #{server.port}")
-        if server.latest_uploaded_ref
+        if TasteTester::Config.no_repo && server.last_upload_time
+          logger.warn("Last upload time was #{server.last_upload_time}")
+        elsif !TasteTester::Config.no_repo && server.latest_uploaded_ref
+          if server.last_upload_time
+            logger.warn("Last upload time was #{server.last_upload_time}")
+          end
           logger.warn('Latest uploaded revision is ' +
             server.latest_uploaded_ref)
         else
@@ -79,12 +84,16 @@ module TasteTester
       end
       server = TasteTester::Server.new
       unless TasteTester::Config.linkonly
-        repo = BetweenMeals::Repo.get(
-          TasteTester::Config.repo_type,
-          TasteTester::Config.repo,
-          logger,
-        )
-        unless repo.exists?
+        if TasteTester::Config.no_repo
+          repo = nil
+        else
+          repo = BetweenMeals::Repo.get(
+            TasteTester::Config.repo_type,
+            TasteTester::Config.repo,
+            logger,
+          )
+        end
+        if repo && !repo.exists?
           fail "Could not open repo from #{TasteTester::Config.repo}"
         end
       end
@@ -168,7 +177,7 @@ module TasteTester
 
     def self.upload
       server = TasteTester::Server.new
-      # On a fore-upload rather than try to clean up whatever's on the server
+      # On a force-upload rather than try to clean up whatever's on the server
       # we'll restart chef-zero which will clear everything and do a full
       # upload
       if TasteTester::Config.force_upload
