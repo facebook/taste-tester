@@ -422,8 +422,8 @@ MODES:
   rescue TasteTester::Exceptions::SshError
     exit(1)
   end
+end
 
-  if $PROGRAM_NAME == __FILE__
-    include TasteTester
-  end
+if $PROGRAM_NAME == __FILE__
+  include TasteTester
 end
