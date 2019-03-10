@@ -26,12 +26,6 @@ module TasteTester
       @host = host
       @server = server
       @timeout = timeout
-      if TasteTester::Config.testing_until
-        @delta_secs = TasteTester::Config.testing_until.strftime('%s').to_i -
-                      Time.now.strftime('%s').to_i
-      else
-        @delta_secs = TasteTester::Config.testing_time
-      end
     end
 
     def run
@@ -44,13 +38,21 @@ module TasteTester
     end
 
     def cmd
-      @max_ping = @delta_secs / 10
       pid = '$$'
       @ts = TasteTester::Config.testing_end_time.strftime('%y%m%d%H%M.%S')
-      cmds = "ps -o pgid= -p $(ps -o ppid= -p #{pid}) | sed \"s| ||g\" " +
-             " > #{TasteTester::Config.timestamp_file} &&" +
-             " touch -t #{@ts} #{TasteTester::Config.timestamp_file} &&" +
-             " sleep #{@delta_secs}"
+
+      # Tie the faith of our SSH tunnel with the faith of timestamp file.
+      # taste-testing can be renewed, so we'll wait until:
+      # 1. the timestamp file is entirely gone
+      # 2. our parent (sshd process) dies (our parent PGID changes)
+      # 3. new taste-tester instance is running (file contains different PGID)
+      cmds = "SSH_PGID=\"$(ps -o pgid= -p $(ps -o ppid= -p #{pid}) | sed \"s| ||g\")\"; " +
+             "echo $SSH_PGID > #{TasteTester::Config.timestamp_file} && " +
+             "touch -t #{@ts} #{TasteTester::Config.timestamp_file} && " +
+             "while [[ -f #{TasteTester::Config.timestamp_file} && " +
+             "\"$(cat #{TasteTester::Config.timestamp_file})\" == \"$SSH_PGID\" && " +
+             "\"$(ps -o pgid= -p $(ps -o ppid= -p #{pid}) | sed \"s| ||g\")\" == \"$SSH_PGID\" ]]; do " +
+             'sleep 60; done'
       # As great as it would be to have ExitOnForwardFailure=yes,
       # we had multiple cases of tunnels dying
       # if -f and ExitOnForwardFailure are used together.
@@ -60,7 +62,7 @@ module TasteTester
       cmd = "#{TasteTester::Config.ssh_command} " +
             "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
             '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
-            "-o ServerAliveInterval=10 -o ServerAliveCountMax=#{@max_ping} " +
+            '-o ServerAliveInterval=10 ' +
             "-f -R #{@port}:localhost:#{@server.port} "
       if TasteTester::Config.user != 'root'
         cc = Base64.encode64(cmds).delete("\n")
