@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
   s.files = %w{README.md LICENSE} + Dir.glob('lib/taste_tester/*.rb') +
             Dir.glob('bin/*') + Dir.glob('scripts/*')
   s.executables = 'taste-tester'
-  s.license = 'Apache'
+  s.license = 'Apache-2.0'
   s.add_dependency 'between_meals', '>= 0.0.6'
   # without an explicit dependency, json is resolved to 1.7.7 on Ruby 2.4
   # which doesn't compile.

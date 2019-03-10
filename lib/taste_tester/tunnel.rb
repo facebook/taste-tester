@@ -25,12 +25,6 @@ module TasteTester
     def initialize(host, server)
       @host = host
       @server = server
-      if TasteTester::Config.testing_until
-        @delta_secs = TasteTester::Config.testing_until.strftime('%s').to_i -
-                      Time.now.strftime('%s').to_i
-      else
-        @delta_secs = TasteTester::Config.testing_time
-      end
     end
 
     def run
@@ -43,13 +37,99 @@ module TasteTester
     end
 
     def cmd
-      @max_ping = @delta_secs / 10
-      pid = '$$'
       @ts = TasteTester::Config.testing_end_time.strftime('%y%m%d%H%M.%S')
-      cmds = "ps -o pgid= -p $(ps -o ppid= -p #{pid}) | sed \"s| ||g\" " +
-             " > #{TasteTester::Config.timestamp_file} &&" +
-             " touch -t #{@ts} #{TasteTester::Config.timestamp_file} &&" +
-             " sleep #{@delta_secs}"
+
+      # Tie the life of our SSH tunnel with the life of timestamp file.
+      # taste-testing can be renewed, so we'll wait until:
+      # 1. the timestamp file is entirely gone
+      # 2. our parent sshd process dies
+      # 3. new taste-tester instance is running (file contains different PGID)
+      cmds = <<~EOS
+      log() {
+        [ -e /usr/bin/logger ] || return
+        logger -t taste-tester "$*"
+      }
+      # sets $current_pgid
+      # This is important, this should just be called ald let it set the
+      # variable. Do NOT call in a subshell like foo=$(get_current_pgid)
+      # as then you end up even further down the list of children
+      get_current_pgid() {
+
+        # if TT user is non-root, then it breaks down like this:
+        #   we are 'bash'
+        #   our parent is 'sudo'
+        #   our parent's parent is 'bash "echo ..." | sudo bash -x'
+        #   our parent's parent's parent is ssh
+        #   - we want the progress-group ID of *that*
+        #
+        # EXCEPT... sometimes sudo forks itself one more time so it's
+        #   we are 'bash'
+        #   our parent is 'sudo'
+        #   our parent's parent 'sudo'
+        #   our parent's parent's parent is 'bash "echo ..." | sudo bash -x'
+        #   our parent's parent's parent's parent is ssh
+        #   - we want the progress-group ID of *that*
+        #
+        # BUT if the TT user is root, no sudo at all...
+        #   we are 'bash'
+        #   our parent is 'bash "echo ..." | bash -c
+        #   our parent's parent is ssh
+        #   - we want the progress-group ID of *that*
+        #
+        # We can make all sorts of assumptions, but the most reliable way
+        # to do this that's always correct is to is simply to walk parents until
+        # we hit something with SSH in the name. Start with PPID and go from
+        # there.
+        #
+        # There's a few commented out 'log's here that are too verbose
+        # for operation (since this function runs every minute)  but are useful
+        # for debugging.
+
+        relevant_pid=''
+        current_pid=$PPID
+        while true; do
+          name=$(ps -o command= -p $current_pid)
+          if [[ "$name" =~ sshd ]]; then
+            # Uncomment the following for debugging...
+            #log "$current_pid is ssh, that's us!"
+            relevant_pid=$current_pid
+            break
+          fi
+          # Uncomment the following for debugging...
+          #log "$current_pid is $name, finding parent..."
+          current_pid=$(ps -o ppid= -p $current_pid)
+        done
+        if [ -z "$relevant_pid" ];then
+          log "Cannot determine relevant PGID"
+          exit 42
+        fi
+        current_pgid="$(ps -o pgid= -p $relevant_pid | sed "s| ||g")"
+        # Uncomment the following for debugging...
+        #log "PGID of ssh ($relevant_pid) is $current_pgid"
+      }
+      get_current_pgid
+      SSH_PGID=$current_pgid
+
+      echo $SSH_PGID > #{TasteTester::Config.timestamp_file} && \
+      touch -t #{@ts} #{TasteTester::Config.timestamp_file} && \
+      while true; do
+        if ! [ -f "#{TasteTester::Config.timestamp_file}" ]; then
+          log "Ending tunnel: timestamp file disappeared"
+          break
+        fi
+        current_pid="$(cat #{TasteTester::Config.timestamp_file})"
+        if ! [ "$current_pid" = "$SSH_PGID" ]; then
+          log "Ending tunnel: timestamp PGID changed"
+          break
+        fi
+        get_current_pgid
+        if ! [ "$current_pgid" = "$SSH_PGID" ]; then
+          log "Ending tunnel: timestamp PGID isn't ours"
+          break
+        fi
+        sleep 60
+      done
+      EOS
       # As great as it would be to have ExitOnForwardFailure=yes,
       # we had multiple cases of tunnels dying
       # if -f and ExitOnForwardFailure are used together.
@@ -61,14 +141,17 @@ module TasteTester
             "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
             '-T -o BatchMode=yes ' +
             '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
-            "-o ServerAliveInterval=10 -o ServerAliveCountMax=#{@max_ping} " +
+            '-o ServerAliveInterval=10 -o ServerAliveCountMax=6 ' +
             "-f -R #{@port}:localhost:#{@server.port} "
+      cc = Base64.encode64(cmds).delete("\n")
+
+      # always base64 encode the command so we don't have to deal with quoting
+      cmd += "#{TasteTester::Config.user}@#{@host} \"echo '#{cc}' | base64" +
+             ' --decode'
       if TasteTester::Config.user != 'root'
-        cc = Base64.encode64(cmds).delete("\n")
-        cmd += "#{TasteTester::Config.user}@#{@host} \"echo '#{cc}' | base64" +
-               ' --decode | sudo bash -x"'
+        cmd += ' | sudo bash -x"'
       else
-        cmd += "root@#{@host} '#{cmds}'"
+        cmd += ' | bash -x"'
       end
       cmd
     end
@@ -79,11 +162,8 @@ module TasteTester
       # surround this in paryns, and make sure as a whole it evaluates
       # to true so it doesn't mess up other things... even though this is
       # the only thing we're currently executing in this SSH.
-      if TasteTester::Config.user != 'root'
-        sudo = 'sudo '
-      end
       cmd = "( [ -s #{TasteTester::Config.timestamp_file} ]" +
-            " && #{sudo}kill -9 -- " +
+            ' && kill -9 -- ' +
             "-\$(cat #{TasteTester::Config.timestamp_file}) 2>/dev/null; " +
             ' true )'
       ssh << cmd
