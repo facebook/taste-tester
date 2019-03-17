@@ -22,10 +22,9 @@ module TasteTester
 
     attr_reader :port
 
-    def initialize(host, server, timeout = 5)
+    def initialize(host, server)
       @host = host
       @server = server
-      @timeout = timeout
       if TasteTester::Config.testing_until
         @delta_secs = TasteTester::Config.testing_until.strftime('%s').to_i -
                       Time.now.strftime('%s').to_i
@@ -58,7 +57,8 @@ module TasteTester
       # in a way that port was still open, but subsequent requests were hanging.
       # This is reproducible and should be looked into.
       cmd = "#{TasteTester::Config.ssh_command} " +
-            "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
+            "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
+            '-T -o BatchMode=yes ' +
             '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
             "-o ServerAliveInterval=10 -o ServerAliveCountMax=#{@max_ping} " +
             "-f -R #{@port}:localhost:#{@server.port} "

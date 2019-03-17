@@ -51,6 +51,7 @@ module TasteTester
     timestamp_file '/etc/chef/test_timestamp'
     use_ssh_tunnels false
     ssh_command 'ssh'
+    ssh_connect_timeout 5
     use_ssl true
     chef_zero_logging true
     chef_config_path '/etc/chef'
