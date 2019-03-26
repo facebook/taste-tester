@@ -38,8 +38,8 @@ module TasteTester
       @port = TasteTester::Config.tunnel_port
       logger.info("Setting up tunnel on port #{@port}")
       @status, @output = exec!(cmd, logger)
-    rescue StandardError
-      logger.error 'Failed bringing up ssh tunnel'
+    rescue StandardError => e
+      logger.error "Failed bringing up ssh tunnel: #{e}"
       exit(1)
     end
 
