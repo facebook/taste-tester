@@ -90,6 +90,13 @@ MODES:
     cookbooks and roles. It also does a fair amount of sanity checking on
     your repo and you may specify --skip-repo-checks to bypass this.
 
+  profile
+    Examine local repo changes to determine which roles are potentially
+    affected by the changes. Compares the set of modified cookbooks with the
+    dependency lists of each role and reports any role which depends on a
+    modified cookbook. It is recommended to test your changes on at least one
+    server of each role, potentially also on multiple platforms.
+
   keeptesting
     Extend the testing time on server specified by -s by 1 hour unless
     otherwise specified by -t.
@@ -414,6 +421,8 @@ MODES:
       TasteTester::Commands.runchef
     when :upload
       TasteTester::Commands.upload
+    when :profile
+      TasteTester::Commands.profile
     else
       logger.error("Invalid mode: #{mode}")
       puts parser

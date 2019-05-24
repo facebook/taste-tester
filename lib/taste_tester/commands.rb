@@ -210,5 +210,10 @@ module TasteTester
       logger.error(exception.backtrace.join("\n"))
       exit 1
     end
+
+    def self.profile
+      logger.warn('Profile which roles will be affected by current changes')
+      logger.error('Not yet implemented')
+    end
   end
 end
