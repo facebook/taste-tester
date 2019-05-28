@@ -123,6 +123,29 @@ module TasteTester
       @server.last_upload_time = Time.new.strftime('%Y-%m-%d %H:%M:%S')
     end
 
+    def get_changes
+      logger.info('Calculating changes since ' +
+                   @server.latest_uploaded_ref)
+      changeset = BetweenMeals::Changeset.new(
+        logger,
+        @repo,
+        @server.latest_uploaded_ref,
+        nil,
+        {
+          :cookbook_dirs =>
+            TasteTester::Config.relative_cookbook_dirs,
+          :role_dir =>
+            TasteTester::Config.relative_role_dir,
+        },
+        @track_symlinks,
+      )
+
+      cbs = changeset.cookbooks
+      roles = changeset.roles
+
+      return cbs, roles
+    end
+
     private
 
     def full
