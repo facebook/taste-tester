@@ -211,19 +211,19 @@ module TasteTester
       exit 1
     end
 
-    def self.profile
-      logger.warn('Profile which roles will be affected by current changes')
+    def self.impact
+      logger.warn('Determine which roles will be impacted by current changes')
       logger.error('Not yet implemented (testing only)')
 
       server = TasteTester::Server.new
       client = TasteTester::Client.new(server)
-      cbs, roles = client.get_changes
+      diff_cbs, diff_roles = client.get_current_changes
 
       puts "Cookbooks: ".yellow
-      puts cbs
+      puts diff_cbs
 
       puts "Roles: ".yellow
-      puts roles
+      puts diff_roles
     end
   end
 end

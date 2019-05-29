@@ -123,7 +123,7 @@ module TasteTester
       @server.last_upload_time = Time.new.strftime('%Y-%m-%d %H:%M:%S')
     end
 
-    def get_changes
+    def get_current_changes
       logger.info('Calculating changes since ' +
                    @server.latest_uploaded_ref)
       changeset = BetweenMeals::Changeset.new(
