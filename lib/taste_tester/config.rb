@@ -60,11 +60,17 @@ module TasteTester
     transport 'ssh'
     no_repo false
 
+    # Change these to point to the "ground truth" commit of the repository.
+    # These refs will be used for calculating the impact of a chef change.
+    vcs_master_git 'origin/HEAD'
+    vcs_master_hg 'master'
+
     skip_pre_upload_hook false
     skip_post_upload_hook false
     skip_pre_test_hook false
     skip_post_test_hook false
     skip_repo_checks_hook false
+    use_custom_impact_hook false
 
     def self.cookbooks
       cookbook_dirs.map do |x|

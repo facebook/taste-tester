@@ -45,14 +45,11 @@ module TasteTester
     # Do stuff after we put hosts in test mode
     def self.post_test(_dryrun, _repo, _hosts); end
 
-    # Do stuff before checking impact of changes
-    def self.pre_impact(_dryrun, _repo); end
-
-    # Do stuff after checking impact of changes
-    def self.post_impact(_dryrun, _repo); end
-
     # Additional checks you want to do on the repo
     def self.repo_checks(_dryrun, _repo); end
+
+    # Custom impact testing, overrides default reporting
+    def self.custom_impact(_dryrun, _repo); end
 
     def self.get(file)
       path = File.expand_path(file)

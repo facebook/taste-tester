@@ -215,15 +215,55 @@ module TasteTester
       logger.warn('Determine which roles will be impacted by current changes')
       logger.error('Not yet implemented (testing only)')
 
-      server = TasteTester::Server.new
-      client = TasteTester::Client.new(server)
-      diff_cbs, diff_roles = client.get_current_changes
+      repo = BetweenMeals::Repo.get(
+        TasteTester::Config.repo_type,
+        TasteTester::Config.repo,
+        logger,
+      )
 
-      puts "Cookbooks: ".yellow
-      puts diff_cbs
+      if repo && !repo.exists?
+        fail "Could not open repo from #{TasteTester::Config.repo}"
+      end
 
-      puts "Roles: ".yellow
-      puts diff_roles
+      if TasteTester::Config.use_custom_impact_hook
+        TasteTester::Hooks.custom_impact(TasteTester::Config.dryrun, repo)
+      else
+        # We want to compare changes in the current directory (working set)
+        # with the "most recent" commit in the VCS. For SVN, this will be the
+        # latest commit on the checked out repository (i.e. 'trunk'). Git/Hg
+        # may have different tags or labels assigned to the "master" branch,
+        # (i.e. 'master', 'stable', etc.) and should be configured if different
+        # than the defaults.
+        start_ref = ''
+        type = repo.class.name.split('::').last
+        case type
+        when 'Svn'
+          start_ref = repo.latest_revision
+        when 'Git'
+          start_ref = TasteTester::Config.vcs_master_git
+        when 'Hg'
+          start_ref = TasteTester::Config.vcs_master_hg
+        end
+
+        changeset = BetweeenMeals::Changeset.new(
+          logger,
+          @repo,
+          start_ref,
+          nil,
+          {
+            :cookbook_dirs =>
+              TasteTester::Config.relative_cookbook_dirs,
+            :role_dir =>
+              TasteTester::Config.relative_role_dir,
+          },
+          @track_symlinks,
+        )
+
+        #TODO: Build list of affected roles by iterating through each
+        # role in the role dir and computing dependencies, then comparing
+        # these with the changeset.
+      end
+
     end
   end
 end
