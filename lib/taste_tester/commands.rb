@@ -259,9 +259,39 @@ module TasteTester
           @track_symlinks,
         )
 
-        #TODO: Build list of affected roles by iterating through each
-        # role in the role dir and computing dependencies, then comparing
-        # these with the changeset.
+        cbs = changeset.cookbooks
+        roles = changeset.roles
+
+        # Now that we have a list of changed cookbooks and roles, we can check
+        # which roles contain modified dependencies. For simplicity, we will
+        # check using brute force by iterating through all dependencies of each
+        # role. These dependencies are then checked against the changeset until
+        # a match is found. If a match exists, the role was impacted, otherwise
+        # we can move on. This may change in the future if it proves to be a
+        # perfomance bottleneck.
+
+        impact_roles = Set[roles]
+
+        # Check each role in the roles directory
+        Dir.each_child(TasteTester::Config.relative_role_dir) { |r|
+          logger.info('Checking role ' + r)
+
+          # Use knife to compute the recursive dependencies of this role
+          deps = `knife deps --tree --recurse #{TasteTester::Config.role_dir}/#{r}`
+          # Check each line of output with changeset
+          # If a dependency was changed, add this role and move to the next one
+          deps.each_line { |line|
+            if cbs.include?(line.strip)
+              impact_roles.add(r)
+              break
+            end
+          }
+        }
+
+        logger.warn('The following roles have modified dependencies. Please test' +
+                    'a host in each of these roles.')
+        impact_roles.each {|r| logger.info(r)}
+
       end
 
     end
