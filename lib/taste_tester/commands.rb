@@ -294,6 +294,9 @@ module TasteTester
 
       end
 
+      unless TasteTester::Config.skip_post_impact_hook
+        TasteTester::Hooks.post_impact(TasteTester::Config.dryrun, impact_roles)
+      end
     end
   end
 end
