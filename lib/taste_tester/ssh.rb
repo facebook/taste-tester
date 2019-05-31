@@ -24,9 +24,8 @@ module TasteTester
 
     attr_reader :output, :status
 
-    def initialize(host, timeout = 5, tunnel = false)
+    def initialize(host, tunnel = false)
       @host = host
-      @timeout = timeout
       @tunnel = tunnel
       @cmds = []
     end
@@ -68,7 +67,8 @@ and come back once that works
       end
       cmds = @cmds.join(' && ')
       cmd = "#{TasteTester::Config.ssh_command} " +
-            "-T -o BatchMode=yes -o ConnectTimeout=#{@timeout} " +
+            '-T -o BatchMode=yes ' +
+            "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
             "#{TasteTester::Config.user}@#{@host} "
       if TasteTester::Config.user != 'root'
         cc = Base64.encode64(cmds).delete("\n")

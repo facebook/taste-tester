@@ -328,6 +328,12 @@ MODES:
       options[:ssh_command] = c
     end
 
+    opts.on(
+      '--ssh-connect-timeout TIMEOUT', 'SSH \'-o ConnectTimeout\' value'
+    ) do |c|
+      options[:ssh_connect_timeout] = c
+    end
+
     opts.on('--skip-repo-checks', 'Skip repository sanity checks') do
       options[:skip_repo_checks] = true
     end
