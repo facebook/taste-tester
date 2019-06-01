@@ -212,8 +212,7 @@ module TasteTester
     end
 
     def self.impact
-      logger.warn('Determine which roles will be impacted by current changes')
-      logger.error('Not yet implemented (testing only)')
+      logger.warn('Determining roles which will be impacted by current changes')
 
       repo = BetweenMeals::Repo.get(
         TasteTester::Config.repo_type,
@@ -245,22 +244,32 @@ module TasteTester
           start_ref = TasteTester::Config.vcs_master_hg
         end
 
-        changeset = BetweeenMeals::Changeset.new(
+        #TODO switch back to using start_ref and nil to compare master
+        # branch with current working set
+        #TODO use Config.relative_cookbook_dirs instead of static directory
+        changeset = BetweenMeals::Changeset.new(
           logger,
-          @repo,
-          start_ref,
-          nil,
+          repo,
+          '.^',  #start_ref,
+          '.',   #nil,
           {
             :cookbook_dirs =>
-              TasteTester::Config.relative_cookbook_dirs,
+              ['chef/cookbooks'],
+              #TasteTester::Config.relative_cookbook_dirs,
             :role_dir =>
               TasteTester::Config.relative_role_dir,
           },
           @track_symlinks,
         )
 
-        cbs = changeset.cookbooks
-        roles = changeset.roles
+        cbs = Set.new(changeset.cookbooks)
+        roles = Set.new(changeset.roles)
+
+        logger.warn('Modified Cookbooks:'.yellow)
+        cbs.each {|cb| logger.warn("  #{cb}")}
+        logger.warn('Modified Roles:'.yellow)
+        roles.each {|r| logger.warn("  #{r}")}
+
 
         # Now that we have a list of changed cookbooks and roles, we can check
         # which roles contain modified dependencies. For simplicity, we will
@@ -270,28 +279,48 @@ module TasteTester
         # we can move on. This may change in the future if it proves to be a
         # perfomance bottleneck.
 
-        impact_roles = Set[roles]
+        impact_roles = Array.new
+        roles.each {|r| impact_roles |= [r.name]}
 
-        # Check each role in the roles directory
-        Dir.each_child(TasteTester::Config.relative_role_dir) { |r|
-          logger.info('Checking role ' + r)
+        unless cbs.empty? and roles.empty?
+          # Check each role in the roles directory
+          chef_dir = File.join(TasteTester::Config.repo,
+                               TasteTester::Config.base_dir)
+          role_dir = TasteTester::Config.role_dir
 
-          # Use knife to compute the recursive dependencies of this role
-          deps = `knife deps --tree --recurse #{TasteTester::Config.role_dir}/#{r}`
-          # Check each line of output with changeset
-          # If a dependency was changed, add this role and move to the next one
-          deps.each_line { |line|
-            if cbs.include?(line.strip)
-              impact_roles.add(r)
-              break
-            end
-          }
-        }
+          Dir.chdir(chef_dir) do
+            Dir.glob("#{role_dir}/*.rb") { |r|
+              logger.warn('Checking ' + r)
 
-        logger.warn('The following roles have modified dependencies. Please test' +
-                    'a host in each of these roles.')
-        impact_roles.each {|r| logger.info(r)}
+              # Use knife to compute the recursive dependencies of this role
+              deps = `knife deps /#{r} -c #{TasteTester::Config.knife_config} --chef-repo-path #{chef_dir}`
 
+              # If knife did not exit with 0, print whatever it returned and exit
+              if $? != 0
+                puts deps
+                exit(1)
+              end
+
+              # Check each line of output with changeset
+              # If a dependency was changed, add this role and move to the next one
+              deps.each_line { |line|
+                cbs.each do |cb|
+                  if cb.name == line.strip.split('/').last
+                    impact_roles |= [File.basename(r, File.extname(r))]
+                    logger.warn("  Found dependency: #{r} --> #{line}")
+                    break
+                  end
+                end
+              }
+            }
+
+            logger.warn('The following roles have modified dependencies. ' +
+                        'Please test a host in each of these roles.')
+            impact_roles.each {|r| logger.warn(r)}
+          end
+        else
+          logger.warn('No cookbooks or roles have been modified.')
+        end
       end
 
       unless TasteTester::Config.skip_post_impact_hook

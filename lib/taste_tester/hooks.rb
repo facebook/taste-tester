@@ -51,6 +51,9 @@ module TasteTester
     # Custom impact testing, overrides default reporting
     def self.custom_impact(_dryrun, _repo); end
 
+    # Do stuff after we find impacted roles
+    def self.post_impact(_dryrun, _impact_roles); end
+
     def self.get(file)
       path = File.expand_path(file)
       logger.warn("Loading plugin at #{path}")

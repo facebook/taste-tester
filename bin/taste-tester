@@ -375,6 +375,18 @@ MODES:
     ) do
       options[:skip_post_test_hook] = true
     end
+
+    opts.on(
+      '--use-custom-impact-hook', 'Use customized impact hook. Works on impact.'
+    ) do
+      options[:use_custom_impact_hook] = true
+    end
+
+    opts.on(
+      '--skip-post-impact-hook', 'Skip post-impact hook. Works on impact.'
+    ) do
+      options[:skip_post_impact_hook] = true
+    end
   end
   # rubocop:enable Metrics/BlockLength
 
