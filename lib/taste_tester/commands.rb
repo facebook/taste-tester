@@ -228,7 +228,7 @@ module TasteTester
       unless TasteTester::Config.use_custom_changeset_hook
         changeset = _find_changeset(repo)
       else
-        changeset = custom_changeset(repo)
+        changeset = TasteTester::Hooks.custom_changeset(repo)
       end
 
       # Use the changeset computed earlier to find modified roles
