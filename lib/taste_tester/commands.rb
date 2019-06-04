@@ -20,6 +20,7 @@ require 'taste_tester/config'
 require 'taste_tester/client'
 require 'taste_tester/logging'
 require 'taste_tester/exceptions'
+require 'English'
 
 module TasteTester
   # Functionality dispatch
@@ -225,25 +226,25 @@ module TasteTester
       end
 
       # Compute the set of changes using Between Meals or a custom hook
-      unless TasteTester::Config.use_custom_changeset_hook
-        changeset = _find_changeset(repo)
-      else
+      if TasteTester::Config.use_custom_changeset_hook
         changeset = TasteTester::Hooks.custom_changeset(repo)
+      else
+        changeset = _find_changeset(repo)
       end
 
       # Use the changeset computed earlier to find modified roles
-      unless TasteTester::Config.use_custom_impact_hook
-        impact_roles = _find_impact(changeset)
-      else
+      if TasteTester::Config.use_custom_impact_hook
         impact_roles = TasteTester::Hooks.custom_impact(changeset)
+      else
+        impact_roles = _find_impact(changeset)
       end
 
-      unless impact_roles.empty?
+      if impact_roles.empty?
+        logger.warn('No impacted roles were found.')
+      else
         logger.warn('The following roles have modified dependencies. ' +
                     'Please test a host in each of these roles.')
-        impact_roles.each {|r| logger.warn("\t#{r}")}
-      else
-        logger.warn('No impacted roles were found.')
+        impact_roles.each { |r| logger.warn("\t#{r}") }
       end
 
       # Do any post processing required on the list of impacted roles
@@ -274,7 +275,7 @@ module TasteTester
         logger,
         repo,
         start_ref,
-        nil,  # compare with current working copy
+        nil, # compare with current working copy
         {
           :cookbook_dirs =>
             TasteTester::Config.relative_cookbook_dirs,
@@ -297,18 +298,18 @@ module TasteTester
       cbs = Set.new(changeset.cookbooks)
       roles = Set.new(changeset.roles)
 
-      if cbs.empty? and roles.empty?
+      if cbs.empty? && roles.empty?
         logger.error('No cookbooks or roles have been modified.')
         exit(1)
       end
 
       unless cbs.empty?
         logger.warn('Modified Cookbooks:')
-        cbs.each {|cb| logger.warn("\t#{cb}")}
+        cbs.each { |cb| logger.warn("\t#{cb}") }
       end
       unless roles.empty?
         logger.warn('Modified Roles:')
-        roles.each {|r| logger.warn("\t#{r}")}
+        roles.each { |r| logger.warn("\t#{r}") }
       end
 
       return _find_impact_roles(cbs, roles)
@@ -335,7 +336,7 @@ module TasteTester
       # if knife did not exit with 0, print whatever it returned and exit
       logger.warn('Finding dependencies (this may take a minute or two)...')
       deps = `knife deps /#{role_dir}/*.rb #{options} #{config} #{chef_path}`
-      if $? != 0
+      unless $CHILD_STATUS.success?
         puts deps
         exit(1)
       end
@@ -348,13 +349,13 @@ module TasteTester
       logger.warn('Searching for impacted roles...')
 
       impact_roles = []
-      roles.each {|r| impact_roles |= r.name}
+      roles.each { |r| impact_roles |= r.name }
 
-      deps_tree.each do |role, deps|
+      deps_tree.each do |r, d|
         cbs.each do |cb|
-          if deps.include?(cb.name)
-            impact_roles |= [role]
-            logger.info("\tFound dependency: #{role} --> #{cb.name}")
+          if d.include?(cb.name)
+            impact_roles |= [r]
+            logger.info("\tFound dependency: #{r} --> #{cb.name}")
             break
           end
         end
