@@ -265,26 +265,20 @@ module TasteTester
         cbs = Set.new(changeset.cookbooks)
         roles = Set.new(changeset.roles)
 
-        logger.warn('Modified Cookbooks:'.yellow)
-        cbs.each {|cb| logger.warn("  #{cb}")}
-        logger.warn('Modified Roles:'.yellow)
-        roles.each {|r| logger.warn("  #{r}")}
+        unless cbs.empty?
+          logger.warn('Modified Cookbooks:')
+          cbs.each {|cb| logger.warn("\t#{cb}")}
+        end
+        unless roles.empty?
+          logger.warn('Modified Roles:')
+          roles.each {|r| logger.warn("\t#{r}")}
+        end
 
-
-        # Now that we have a list of changed cookbooks and roles, we can check
-        # which roles contain modified dependencies. For simplicity, we will
-        # check using brute force by iterating through all dependencies of each
-        # role. These dependencies are then checked against the changeset until
-        # a match is found. If a match exists, the role was impacted, otherwise
-        # we can move on. This may change in the future if it proves to be a
-        # perfomance bottleneck.
-
-        # initialize list of impacted roles with those that have been directly modified
-        impact_roles = Array.new
+        impact_roles = []
         roles.each {|r| impact_roles |= [r.name]}
 
         unless cbs.empty? and roles.empty?
-          impact_roles = _find_impact(impact_roles, cbs, roles, glob = true)
+          impact_roles = _find_impact(impact_roles, cbs, roles)
         else
           logger.warn('No cookbooks or roles have been modified.')
         end
@@ -295,111 +289,77 @@ module TasteTester
       end
     end
 
-    def self._find_impact(impact_roles, cbs, roles, glob = false)
+    def self._find_impact(impact_roles, cbs, roles)
+      # Now that we have a list of changed cookbooks and roles, we can check
+      # which roles contain modified dependencies. For simplicity, we will
+      # check using brute force by iterating through each role and comparing
+      # its dependencies with the set of modified files. If a match exists,
+      # the role was impacted, otherwise we can move on.
+      # This may change in the future if it is a perfomance bottleneck.
 
-      # construct some common variables for easier reference
       role_dir = TasteTester::Config.role_dir
       chef_dir = File.join(TasteTester::Config.repo,
                            TasteTester::Config.base_dir)
+
       # CLI options for knife calls
-      knife_config = "--config #{TasteTester::Config.knife_config}"
-      knife_chef_path = "--chef-repo-path #{chef_dir}"
-      knife_options = glob ? '--tree --recurse' : ''
+      config = "--config #{TasteTester::Config.knife_config}"
+      chef_path = "--chef-repo-path #{chef_dir}"
+      options = '--tree --recurse'
 
-      if !glob
-        # Shell out to knife for each ruby file in the roles directory
-        Dir.chdir(chef_dir) do
-          Dir.glob("#{role_dir}/*.rb") do |r|
-            logger.warn('Checking ' + r)
+      # shell out to knife once and parse the resulting file for dependents
+      # if knife did not exit with 0, print whatever it returned and exit
+      logger.warn('Finding dependencies (this may take a minute or two)...')
+      deps = `knife deps /#{role_dir}/*.rb #{options} #{config} #{chef_path}`
+      if $? != 0
+        puts deps
+        exit(1)
+      end
 
-            # Use knife to compute the recursive dependencies of this role
-            # If knife does not exit with 0, print whatever it returned and exit
-            deps = `knife deps /#{r} #{knife_options} #{knife_config} #{knife_chef_path}`
-            if $? != 0
-              puts deps
-              exit(1)
-            end
+      # create a hash between roles and their dependencies
+      logger.warn('Processing dependencies...')
+      deps_tree = _build_dependency_tree(deps)
 
-            # Check each line of output with changeset
-            # If a dependency was changed, add this role and move to the next one
-            deps.each_line do |line|
-              cbs.each do |cb|
-                if cb.name == line.strip.split('/').last
-                  impact_roles |= [File.basename(r, File.extname(r))]
-                  logger.warn("  Found dependency: #{r} --> #{line}")
-                  break
-                end
-              end
-            end
+      # search the hash for roles containing any modified files
+      logger.warn('Searching for impacted roles...')
+      deps_tree.each do |role, deps|
+        cbs.each do |cb|
+          if deps.include?(cb.name)
+            impact_roles |= [role]
+            logger.info("\tFound dependency: #{role} --> #{cb.name}")
+            break
           end
         end
-
-      else # glob == true
-        # Shell out to knife once and parse the resulting file for dependents
-        # If knife did not exit with 0, print whatever it returned and exit
-        logger.warn('Finding dependencies (this may take a minute or two)...')
-        deps = `knife deps /#{role_dir}/*.rb #{knife_options} #{knife_config} #{knife_chef_path}`
-        if $? != 0
-          puts deps
-          exit(1)
-        end
-
-        # create a hash between roles and their dependencies
-        logger.warn('Processing dependencies...')
-        deps_tree = _build_dependency_tree(deps)
-
-        logger.warn('Searching for impacted roles...')
-        deps_tree.each do |node, deps|
-          cbs.each do |cb|
-            if deps.include?(cb.name)
-              impact_roles |= [node]
-              logger.warn("  Found dependency: #{node} --> #{cb.name}")
-            end
-          end
-        end
-      end # end glob
+      end
 
       logger.warn('The following roles have modified dependencies. ' +
                   'Please test a host in each of these roles.')
-      impact_roles.each {|r| logger.warn(r)}
+      impact_roles.each {|r| logger.warn("\t#{r}")}
 
       return impact_roles
     end
 
     def self._build_dependency_tree(deps)
+      # We want to record all nested lines for each role. The top-level roles
+      # will not be indented, indicating they have no dependents. Thus, when
+      # we see a line without indentation, we can start adding subsequent
+      # lines to a list for that line (ie a hash of role -> [deps]). Since we
+      # don't care about precise dependencies for cookbooks, we can lump all
+      # of the indented layers together into the list for the single role.
+      # This is not the most efficient method as repeated cookbooks will list
+      # their dependencies multiple times for each role they are part of,
+      # but the parsing is significantly easier than building a proper graph.
+
       tree = {}
-      deps_arr = []
+      curr_role = nil
 
       deps.each_line do |line|
-        deps_arr << line.rstrip
-      end
+        elem = line.rstrip
 
-      curr_role = ''
-      deps_arr.each do |e|
-        # We want to record all nested lines for each role. The top-level roles
-        # will not be indented, indicating they have no dependents. Thus, when
-        # we see a line without indentation, we can start adding subsequent
-        # lines to a list for that line (ie a hash of role -> [deps]). Since we
-        # don't care about precise dependencies for cookbooks, we can lump all
-        # of the indented layers together into the list for the single role.
-        # This is not the most efficient method as repeated cookbooks will list
-        # their dependencies multiple times for each role they are part of,
-        # but the parsing is significantly easier than building a proper graph.
-
-        if e.length == e.lstrip.length
-          #logger.warn("Processing #{e}")
-          curr_role = e
+        if elem.length == elem.lstrip.length
+          curr_role = elem
           tree[curr_role] = []
         else
-          tree[curr_role] |= [File.basename(e, File.extname(e))]
-        end
-      end
-
-      puts "Deps Tree:".red
-      tree.each do |k,vs|
-        puts "#{k}:"
-        vs.each do |v|
-          puts "  #{v}"
+          tree[curr_role] |= [File.basename(elem, File.extname(elem))]
         end
       end
 
