@@ -70,6 +70,8 @@ module TasteTester
     skip_pre_test_hook false
     skip_post_test_hook false
     skip_repo_checks_hook false
+
+    use_custom_changeset_hook false
     use_custom_impact_hook false
     skip_post_impact_hook false
 

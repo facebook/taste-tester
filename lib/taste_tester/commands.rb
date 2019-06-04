@@ -214,82 +214,107 @@ module TasteTester
     def self.impact
       logger.warn('Determining roles which will be impacted by current changes')
 
+      # Get the repository based on the paths specified in config.rb
       repo = BetweenMeals::Repo.get(
         TasteTester::Config.repo_type,
         TasteTester::Config.repo,
         logger,
       )
-
       if repo && !repo.exists?
         fail "Could not open repo from #{TasteTester::Config.repo}"
       end
 
-      if TasteTester::Config.use_custom_impact_hook
-        TasteTester::Hooks.custom_impact(TasteTester::Config.dryrun, repo)
+      # Compute the set of changes using Between Meals or a custom hook
+      unless TasteTester::Config.use_custom_changeset_hook
+        changeset = _find_changeset(repo)
       else
-        # We want to compare changes in the current directory (working set)
-        # with the "most recent" commit in the VCS. For SVN, this will be the
-        # latest commit on the checked out repository (i.e. 'trunk'). Git/Hg
-        # may have different tags or labels assigned to the "master" branch,
-        # (i.e. 'master', 'stable', etc.) and should be configured if different
-        # than the defaults.
-        start_ref = ''
-        type = repo.class.name.split('::').last
-        case type
-        when 'Svn'
-          start_ref = repo.latest_revision
-        when 'Git'
-          start_ref = TasteTester::Config.vcs_master_git
-        when 'Hg'
-          start_ref = TasteTester::Config.vcs_master_hg
-        end
-
-        #TODO switch back to using start_ref and nil to compare master
-        # branch with current working set
-        #TODO use Config.relative_cookbook_dirs instead of static directory
-        changeset = BetweenMeals::Changeset.new(
-          logger,
-          repo,
-          '.^',  #start_ref,
-          '.',   #nil,
-          {
-            :cookbook_dirs =>
-              ['chef/cookbooks'],
-              #TasteTester::Config.relative_cookbook_dirs,
-            :role_dir =>
-              TasteTester::Config.relative_role_dir,
-          },
-          @track_symlinks,
-        )
-
-        cbs = Set.new(changeset.cookbooks)
-        roles = Set.new(changeset.roles)
-
-        unless cbs.empty?
-          logger.warn('Modified Cookbooks:')
-          cbs.each {|cb| logger.warn("\t#{cb}")}
-        end
-        unless roles.empty?
-          logger.warn('Modified Roles:')
-          roles.each {|r| logger.warn("\t#{r}")}
-        end
-
-        impact_roles = []
-        roles.each {|r| impact_roles |= [r.name]}
-
-        unless cbs.empty? and roles.empty?
-          impact_roles = _find_impact(impact_roles, cbs, roles)
-        else
-          logger.warn('No cookbooks or roles have been modified.')
-        end
+        changeset = custom_changeset(repo)
       end
 
+      # Use the changeset computed earlier to find modified roles
+      unless TasteTester::Config.use_custom_impact_hook
+        impact_roles = _find_impact(changeset)
+      else
+        impact_roles = TasteTester::Hooks.custom_impact(changeset)
+      end
+
+      unless impact_roles.empty?
+        logger.warn('The following roles have modified dependencies. ' +
+                    'Please test a host in each of these roles.')
+        impact_roles.each {|r| logger.warn("\t#{r}")}
+      else
+        logger.warn('No impacted roles were found.')
+      end
+
+      # Do any post processing required on the list of impacted roles
       unless TasteTester::Config.skip_post_impact_hook
-        TasteTester::Hooks.post_impact(TasteTester::Config.dryrun, impact_roles)
+        TasteTester::Hooks.post_impact(impact_roles)
       end
     end
 
-    def self._find_impact(impact_roles, cbs, roles)
+    def self._find_changeset(repo)
+      # We want to compare changes in the current directory (working set)
+      # with the "most recent" commit in the VCS. For SVN, this will be the
+      # latest commit on the checked out repository (i.e. 'trunk'). Git/Hg
+      # may have different tags or labels assigned to the "master" branch,
+      # (i.e. 'master', 'stable', etc.) and should be configured if different
+      # than the defaults.
+      start_ref = ''
+      type = repo.class.name.split('::').last
+      case type
+      when 'Svn'
+        start_ref = repo.latest_revision
+      when 'Git'
+        start_ref = TasteTester::Config.vcs_master_git
+      when 'Hg'
+        start_ref = TasteTester::Config.vcs_master_hg
+      end
+
+      changeset = BetweenMeals::Changeset.new(
+        logger,
+        repo,
+        start_ref,
+        nil,  # compare with current working copy
+        {
+          :cookbook_dirs =>
+            TasteTester::Config.relative_cookbook_dirs,
+          :role_dir =>
+            TasteTester::Config.relative_role_dir,
+        },
+        @track_symlinks,
+      )
+
+      return changeset
+    end
+
+    def self._find_impact(changeset)
+      if TasteTester::Config.relative_cookbook_dirs.length > 1
+        logger.error('Knife deps does not support multiple cookbook paths.')
+        logger.error('Flatten the repository or use the custom_impact hook.')
+        exit(1)
+      end
+
+      cbs = Set.new(changeset.cookbooks)
+      roles = Set.new(changeset.roles)
+
+      if cbs.empty? and roles.empty?
+        logger.error('No cookbooks or roles have been modified.')
+        exit(1)
+      end
+
+      unless cbs.empty?
+        logger.warn('Modified Cookbooks:')
+        cbs.each {|cb| logger.warn("\t#{cb}")}
+      end
+      unless roles.empty?
+        logger.warn('Modified Roles:')
+        roles.each {|r| logger.warn("\t#{r}")}
+      end
+
+      return _find_impact_roles(cbs, roles)
+    end
+
+    def self._find_impact_roles(cbs, roles)
       # Now that we have a list of changed cookbooks and roles, we can check
       # which roles contain modified dependencies. For simplicity, we will
       # check using brute force by iterating through each role and comparing
@@ -321,6 +346,10 @@ module TasteTester
 
       # search the hash for roles containing any modified files
       logger.warn('Searching for impacted roles...')
+
+      impact_roles = []
+      roles.each {|r| impact_roles |= r.name}
+
       deps_tree.each do |role, deps|
         cbs.each do |cb|
           if deps.include?(cb.name)
@@ -330,10 +359,6 @@ module TasteTester
           end
         end
       end
-
-      logger.warn('The following roles have modified dependencies. ' +
-                  'Please test a host in each of these roles.')
-      impact_roles.each {|r| logger.warn("\t#{r}")}
 
       return impact_roles
     end

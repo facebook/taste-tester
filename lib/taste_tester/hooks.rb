@@ -48,11 +48,16 @@ module TasteTester
     # Additional checks you want to do on the repo
     def self.repo_checks(_dryrun, _repo); end
 
-    # Custom impact testing, overrides default reporting
-    def self.custom_impact(_dryrun, _repo); end
+    # This should return a BetweenMeals::Changeset with the
+    # modified cookbooks, roles, and packages to test
+    def self.custom_changeset(_repo); end
+
+    # This should return a Set of roles impacted by changes.
+    # By default, the format is "/roles/{role}.rb"
+    def self.custom_impact(_changeset); end
 
     # Do stuff after we find impacted roles
-    def self.post_impact(_dryrun, _impact_roles); end
+    def self.post_impact(_impact_roles); end
 
     def self.get(file)
       path = File.expand_path(file)
