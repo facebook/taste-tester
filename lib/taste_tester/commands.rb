@@ -295,27 +295,27 @@ module TasteTester
         exit(1)
       end
 
-      cbs = Set.new(changeset.cookbooks)
+      cookbooks = Set.new(changeset.cookbooks)
       roles = Set.new(changeset.roles)
 
-      if cbs.empty? && roles.empty?
+      if cookbooks.empty? && roles.empty?
         logger.error('No cookbooks or roles have been modified.')
         exit(1)
       end
 
-      unless cbs.empty?
+      unless cookbooks.empty?
         logger.warn('Modified Cookbooks:')
-        cbs.each { |cb| logger.warn("\t#{cb}") }
+        cookbooks.each { |cb| logger.warn("\t#{cb}") }
       end
       unless roles.empty?
         logger.warn('Modified Roles:')
         roles.each { |r| logger.warn("\t#{r}") }
       end
 
-      return _find_impact_roles(cbs, roles)
+      return _find_impact_roles(cookbooks, roles)
     end
 
-    def self._find_impact_roles(cbs, roles)
+    def self._find_impact_roles(cookbooks, roles)
       # Now that we have a list of changed cookbooks and roles, we can check
       # which roles contain modified dependencies. For simplicity, we will
       # check using brute force by iterating through each role and comparing
@@ -327,7 +327,7 @@ module TasteTester
       chef_dir = File.join(TasteTester::Config.repo,
                            TasteTester::Config.base_dir)
 
-      # CLI options for knife calls
+      # CLI options for knife call
       config = "--config #{TasteTester::Config.knife_config}"
       chef_path = "--chef-repo-path #{chef_dir}"
       options = '--tree --recurse'
@@ -335,15 +335,15 @@ module TasteTester
       # shell out to knife once and parse the resulting file for dependents
       # if knife did not exit with 0, print whatever it returned and exit
       logger.warn('Finding dependencies (this may take a minute or two)...')
-      deps = `knife deps /#{role_dir}/*.rb #{options} #{config} #{chef_path}`
-      unless $CHILD_STATUS.success?
-        puts deps
-        exit(1)
+      knife = Mixlib::ShellOut.new("knife deps /#{role_dir}/*.rb #{options} #{config} #{chef_path}")
+      knife.run_command
+      if knife.error?
+        knife.invalid!('knife deps failed, please check output below')
       end
 
       # create a hash between roles and their dependencies
       logger.warn('Processing dependencies...')
-      deps_tree = _build_dependency_tree(deps)
+      deps_tree = _build_dependency_tree(knife.stdout)
 
       # search the hash for roles containing any modified files
       logger.warn('Searching for impacted roles...')
@@ -352,7 +352,7 @@ module TasteTester
       roles.each { |r| impact_roles |= r.name }
 
       deps_tree.each do |r, d|
-        cbs.each do |cb|
+        cookbooks.each do |cb|
           if d.include?(cb.name)
             impact_roles |= [r]
             logger.info("\tFound dependency: #{r} --> #{cb.name}")
