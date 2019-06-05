@@ -336,7 +336,7 @@ module TasteTester
       # if knife did not exit with 0, print whatever it returned and exit
       logger.warn('Finding dependencies (this may take a minute or two)...')
       knife = Mixlib::ShellOut.new(
-        "knife deps /#{role_dir}/*.rb #{options} #{config} #{chef_path}"
+        "knife deps /#{role_dir}/*.rb #{options} #{config} #{chef_path}",
       )
       knife.run_command
       if knife.error?
