@@ -343,6 +343,13 @@ MODES:
       options[:yes] = true
     end
 
+    opts.on(
+      '--json', 'Format output as JSON for programatic consumption.' +
+      ' Default to false. Works on impact.'
+    ) do
+      options[:json] = true
+    end
+
     opts.separator ''
     opts.separator 'Control local hook behavior with these options:'
 

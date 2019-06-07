@@ -212,7 +212,10 @@ module TasteTester
     end
 
     def self.impact
-      # Get the repository based on the paths specified in config.rb
+
+      # Use the repository specified in config.rb to calculate the changes
+      # that may affect Chef. These changes will be further analyzed to
+      # determine specific roles which may change due to modifed dependencies.
       repo = BetweenMeals::Repo.get(
         TasteTester::Config.repo_type,
         TasteTester::Config.repo,
@@ -222,47 +225,50 @@ module TasteTester
         fail "Could not open repo from #{TasteTester::Config.repo}"
       end
 
-      # Compute the set of changes using Between Meals
-      changeset = _find_changeset(repo)
+      changes = _find_changeset(repo)
 
-      # Use the changeset computed earlier to find modified roles
+
+      # Use Knife (or custom logic) to check the dependencies of each role
+      # against the list of changes. `impact_roles` will contian the set
+      # of roles with direct or indirect (dependency) modifications.
       if TasteTester::Config.use_custom_impact_hook
-        impact_roles = TasteTester::Hooks.custom_impact(changeset)
+        impact_roles = TasteTester::Hooks.custom_impact(changes)
       else
-        impact_roles = _find_impact(changeset)
+        impact_roles = _find_impact(changes)
       end
 
-      if impact_roles.empty?
-        logger.warn('No impacted roles were found.')
-      else
-        logger.warn('The following roles have modified dependencies. ' +
-                    'Please test a host in each of these roles.')
-        impact_roles.each { |r| logger.warn("\t#{r}") }
-      end
 
-      # Do any post processing required on the list of impacted roles
+      final_impact = impact_roles
+
+      # Do any post processing required on the list of impacted roles, such
+      # as looking up hostnames associated with each role.
       unless TasteTester::Config.skip_post_impact_hook
-        TasteTester::Hooks.post_impact(impact_roles)
+        final_impact = TasteTester::Hooks.post_impact(impact_roles)
+      end
+
+      # Print the calculated impact. If a print hook is defined that
+      # returns true, then the default print function is skipped.
+      unless TasteTester::Hooks.print_impact(final_impact)
+        _print_impact(final_impact)
       end
     end
 
     def self._find_changeset(repo)
-      # We want to compare changes in the current directory (working set)
-      # with the "most recent" commit in the VCS. For SVN, this will be the
-      # latest commit on the checked out repository (i.e. 'trunk'). Git/Hg
-      # may have different tags or labels assigned to the "master" branch,
-      # (i.e. 'master', 'stable', etc.) and should be configured if different
-      # than the defaults.
-      start_ref = ''
-      case repo
-      when BetweenMeals::Repo::Svn
-        start_ref = repo.latest_revision
-      when BetweenMeals::Repo::Git
-        start_ref = TasteTester::Config.vcs_start_ref_git
-      when BetweenMeals::Repo::Hg
-        start_ref = TasteTester::Config.vcs_start_ref_hg
+      # We want to compare changes in the current directory (working set) with
+      # the "most recent" commit in the VCS. For SVN, this will be the latest
+      # commit on the checked out repository (i.e. 'trunk'). Git/Hg may have
+      # different tags or labels assigned to the master branch, (i.e. 'master',
+      # 'stable', etc.) and should be configured if different than the default.
+      start_ref = case repo
+        when BetweenMeals::Repo::Svn
+          repo.latest_revision
+        when BetweenMeals::Repo::Git
+          TasteTester::Config.vcs_start_ref_git
+        when BetweenMeals::Repo::Hg
+          TasteTester::Config.vcs_start_ref_hg
+        else
+          nil
       end
-
       end_ref = TasteTester::Config.vcs_end_ref
 
       changeset = BetweenMeals::Changeset.new(
@@ -383,6 +389,21 @@ module TasteTester
       end
 
       return tree
+    end
+
+
+    def self._print_impact(final_impact)
+      if TasteTester::Config.json
+        puts "JSON output not yet supported"
+      else
+        if impact_roles.empty?
+          logger.warn('No impacted roles were found.')
+        else
+          logger.warn('The following roles have modified dependencies.' +
+                      ' Please test a host in each of these roles.')
+          impact_roles.each { |r| logger.warn("\t#{r}") }
+        end
+      end
     end
   end
 end
