@@ -20,7 +20,6 @@ require 'taste_tester/config'
 require 'taste_tester/client'
 require 'taste_tester/logging'
 require 'taste_tester/exceptions'
-require 'English'
 
 module TasteTester
   # Functionality dispatch
@@ -213,8 +212,6 @@ module TasteTester
     end
 
     def self.impact
-      logger.warn('Determining roles which will be impacted by current changes')
-
       # Get the repository based on the paths specified in config.rb
       repo = BetweenMeals::Repo.get(
         TasteTester::Config.repo_type,
@@ -225,12 +222,8 @@ module TasteTester
         fail "Could not open repo from #{TasteTester::Config.repo}"
       end
 
-      # Compute the set of changes using Between Meals or a custom hook
-      if TasteTester::Config.use_custom_changeset_hook
-        changeset = TasteTester::Hooks.custom_changeset(repo)
-      else
-        changeset = _find_changeset(repo)
-      end
+      # Compute the set of changes using Between Meals
+      changeset = _find_changeset(repo)
 
       # Use the changeset computed earlier to find modified roles
       if TasteTester::Config.use_custom_impact_hook
@@ -261,26 +254,29 @@ module TasteTester
       # (i.e. 'master', 'stable', etc.) and should be configured if different
       # than the defaults.
       start_ref = ''
-      type = repo.class.name.split('::').last
-      case type
-      when 'Svn'
+      case repo
+      when BetweenMeals::Repo::Svn
         start_ref = repo.latest_revision
-      when 'Git'
-        start_ref = TasteTester::Config.vcs_master_git
-      when 'Hg'
-        start_ref = TasteTester::Config.vcs_master_hg
+      when BetweenMeals::Repo::Git
+        start_ref = TasteTester::Config.vcs_start_ref_git
+      when BetweenMeals::Repo::Hg
+        start_ref = TasteTester::Config.vcs_start_ref_hg
       end
+
+      end_ref = TasteTester::Config.vcs_end_ref
 
       changeset = BetweenMeals::Changeset.new(
         logger,
         repo,
         start_ref,
-        nil, # compare with current working copy
+        end_ref,
         {
           :cookbook_dirs =>
             TasteTester::Config.relative_cookbook_dirs,
           :role_dir =>
             TasteTester::Config.relative_role_dir,
+          :databag_dir =>
+            TasteTester::Config.relative_databag_dir,
         },
         @track_symlinks,
       )
@@ -299,8 +295,8 @@ module TasteTester
       roles = Set.new(changeset.roles)
 
       if cookbooks.empty? && roles.empty?
-        logger.error('No cookbooks or roles have been modified.')
-        exit(1)
+        logger.warn('No cookbooks or roles have been modified.')
+        return []
       end
 
       unless cookbooks.empty?
@@ -315,7 +311,7 @@ module TasteTester
       return _find_impact_roles(cookbooks, roles)
     end
 
-    def self._find_impact_roles(cookbooks, roles)
+    def self._find_impact_roles(mod_cookbooks, mod_roles)
       # Now that we have a list of changed cookbooks and roles, we can check
       # which roles contain modified dependencies. For simplicity, we will
       # check using brute force by iterating through each role and comparing
@@ -339,25 +335,20 @@ module TasteTester
         "knife deps /#{role_dir}/*.rb #{options} #{config} #{chef_path}",
       )
       knife.run_command
-      if knife.error?
-        knife.invalid!('knife deps failed, please check output below')
-      end
+      knife.error!
 
       # create a hash between roles and their dependencies
-      logger.warn('Processing dependencies...')
+      logger.info('Processing dependencies...')
       deps_tree = _build_dependency_tree(knife.stdout)
 
-      # search the hash for roles containing any modified files
-      logger.warn('Searching for impacted roles...')
-
-      impact_roles = []
-      roles.each { |r| impact_roles |= r.name }
-
-      deps_tree.each do |r, d|
-        cookbooks.each do |cb|
-          if d.include?(cb.name)
-            impact_roles |= [r]
-            logger.info("\tFound dependency: #{r} --> #{cb.name}")
+      # compare the dependencies of each role to the list of modified
+      # cookbooks, recording the role as impacted if a match exists
+      impact_roles = Set.new(mod_roles.map { |r| r.name })
+      deps_tree.each do |role, deplist|
+        mod_cookbooks.each do |cb|
+          if deplist.include?(cb.name)
+            impact_roles.add(role)
+            logger.info("\tFound dependency: #{role} --> #{cb.name}")
             break
           end
         end
@@ -387,7 +378,7 @@ module TasteTester
           curr_role = elem
           tree[curr_role] = []
         else
-          tree[curr_role] |= [File.basename(elem, File.extname(elem))]
+          tree[curr_role].add(File.basename(elem, File.extname(elem)))
         end
       end
 

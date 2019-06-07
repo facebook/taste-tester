@@ -60,10 +60,13 @@ module TasteTester
     transport 'ssh'
     no_repo false
 
-    # Change these to point to the "ground truth" commit of the repository.
-    # These refs will be used for calculating the impact of a chef change.
-    vcs_master_git 'origin/HEAD'
-    vcs_master_hg 'master'
+    # Start/End refs for calculating changes in the repo.
+    #  - start_ref should be the "master" commit of the repository
+    #  - end_ref should be nil to compare with the working set,
+    #    or something like '.' to compare with the most recent commit
+    vcs_start_ref_git 'origin/HEAD'
+    vcs_start_ref_hg 'master'
+    vcs_end_ref nil
 
     skip_pre_upload_hook false
     skip_post_upload_hook false
@@ -71,7 +74,6 @@ module TasteTester
     skip_post_test_hook false
     skip_repo_checks_hook false
 
-    use_custom_changeset_hook false
     use_custom_impact_hook false
     skip_post_impact_hook false
 

@@ -377,12 +377,6 @@ MODES:
     end
 
     opts.on(
-      '--use-custom-changeset-hook', 'Find a custom changeset. Works on impact.'
-    ) do
-      options[:use_custom_changeset_hook] = true
-    end
-
-    opts.on(
       '--use-custom-impact-hook', 'Use customized impact hook. Works on impact.'
     ) do
       options[:use_custom_impact_hook] = true
