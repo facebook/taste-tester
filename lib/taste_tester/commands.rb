@@ -235,13 +235,13 @@ module TasteTester
         impact_roles = _find_impact(changes)
       end
 
-      final_impact = impact_roles
-
       # Do any post processing required on the list of impacted roles, such
       # as looking up hostnames associated with each role.
       unless TasteTester::Config.skip_post_impact_hook
         final_impact = TasteTester::Hooks.post_impact(impact_roles)
       end
+
+      final_impact ||= impact_roles
 
       # Print the calculated impact. If a print hook is defined that
       # returns true, then the default print function is skipped.
@@ -381,7 +381,7 @@ module TasteTester
         else
           tree[curr_role].add(File.basename(elem, File.extname(elem)))
         end
-      ed
+      end
 
       return tree
     end
