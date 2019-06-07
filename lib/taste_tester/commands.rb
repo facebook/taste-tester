@@ -212,7 +212,6 @@ module TasteTester
     end
 
     def self.impact
-
       # Use the repository specified in config.rb to calculate the changes
       # that may affect Chef. These changes will be further analyzed to
       # determine specific roles which may change due to modifed dependencies.
@@ -227,7 +226,6 @@ module TasteTester
 
       changes = _find_changeset(repo)
 
-
       # Use Knife (or custom logic) to check the dependencies of each role
       # against the list of changes. `impact_roles` will contian the set
       # of roles with direct or indirect (dependency) modifications.
@@ -236,7 +234,6 @@ module TasteTester
       else
         impact_roles = _find_impact(changes)
       end
-
 
       final_impact = impact_roles
 
@@ -260,15 +257,13 @@ module TasteTester
       # different tags or labels assigned to the master branch, (i.e. 'master',
       # 'stable', etc.) and should be configured if different than the default.
       start_ref = case repo
-        when BetweenMeals::Repo::Svn
-          repo.latest_revision
-        when BetweenMeals::Repo::Git
-          TasteTester::Config.vcs_start_ref_git
-        when BetweenMeals::Repo::Hg
-          TasteTester::Config.vcs_start_ref_hg
-        else
-          nil
-      end
+                  when BetweenMeals::Repo::Svn
+                    repo.latest_revision
+                  when BetweenMeals::Repo::Git
+                    TasteTester::Config.vcs_start_ref_git
+                  when BetweenMeals::Repo::Hg
+                    TasteTester::Config.vcs_start_ref_hg
+                  end
       end_ref = TasteTester::Config.vcs_end_ref
 
       changeset = BetweenMeals::Changeset.new(
@@ -349,7 +344,7 @@ module TasteTester
 
       # compare the dependencies of each role to the list of modified
       # cookbooks, recording the role as impacted if a match exists
-      impact_roles = Set.new(mod_roles.map { |r| r.name })
+      impact_roles = Set.new(mod_roles.map(&:name))
       deps_tree.each do |role, deplist|
         mod_cookbooks.each do |cb|
           if deplist.include?(cb.name)
@@ -386,23 +381,23 @@ module TasteTester
         else
           tree[curr_role].add(File.basename(elem, File.extname(elem)))
         end
-      end
+      ed
 
       return tree
     end
 
-
     def self._print_impact(final_impact)
       if TasteTester::Config.json
         puts "JSON output not yet supported"
+      end
+      # TODO: convert to an elsif when JSON is supported,
+      # otherwise fall through to normal output
+      if final_impact.empty?
+        logger.warn('No impacted roles were found.')
       else
-        if impact_roles.empty?
-          logger.warn('No impacted roles were found.')
-        else
-          logger.warn('The following roles have modified dependencies.' +
-                      ' Please test a host in each of these roles.')
-          impact_roles.each { |r| logger.warn("\t#{r}") }
-        end
+        logger.warn('The following roles have modified dependencies.' +
+                    ' Please test a host in each of these roles.')
+        final_impact.each { |r| logger.warn("\t#{r}") }
       end
     end
   end
