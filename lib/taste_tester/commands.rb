@@ -294,6 +294,7 @@ module TasteTester
 
       cookbooks = Set.new(changeset.cookbooks)
       roles = Set.new(changeset.roles)
+      databags = Set.new(changeset.databags)
 
       if cookbooks.empty? && roles.empty?
         logger.warn('No cookbooks or roles have been modified.')
@@ -301,12 +302,16 @@ module TasteTester
       end
 
       unless cookbooks.empty?
-        logger.warn('Modified Cookbooks:')
-        cookbooks.each { |cb| logger.warn("\t#{cb}") }
+        logger.info('Modified Cookbooks:')
+        cookbooks.each { |cb| logger.info("\t#{cb}") }
       end
       unless roles.empty?
-        logger.warn('Modified Roles:')
-        roles.each { |r| logger.warn("\t#{r}") }
+        logger.info('Modified Roles:')
+        roles.each { |r| logger.info("\t#{r}") }
+      end
+      unless databags.empty?
+        logger.info('Modified Databags:')
+        databags.each { |db| logger.info("\t#{db}") }
       end
 
       return _find_impact_roles(cookbooks, roles)
@@ -331,7 +336,7 @@ module TasteTester
 
       # shell out to knife once and parse the resulting file for dependents
       # if knife did not exit with 0, print whatever it returned and exit
-      logger.warn('Finding dependencies (this may take a minute or two)...')
+      logger.info('Finding dependencies (this may take a minute or two)...')
       knife = Mixlib::ShellOut.new(
         "knife deps /#{role_dir}/*.rb #{options} #{config} #{chef_path}",
       )
@@ -377,7 +382,7 @@ module TasteTester
 
         if elem.length == elem.lstrip.length
           curr_role = elem
-          tree[curr_role] = []
+          tree[curr_role] = Set.new()
         else
           tree[curr_role].add(File.basename(elem, File.extname(elem)))
         end
@@ -388,7 +393,7 @@ module TasteTester
 
     def self._print_impact(final_impact)
       if TasteTester::Config.json
-        puts "JSON output not yet supported"
+        puts 'JSON output not yet supported'
       end
       # TODO: convert to an elsif when JSON is supported,
       # otherwise fall through to normal output

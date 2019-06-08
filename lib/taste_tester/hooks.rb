@@ -60,9 +60,7 @@ module TasteTester
 
     # Customized the printed output of impact
     # If this method returns true, the default output will not be printed.
-    def self.print_impact(_final_impact);
-      return false
-    end
+    def self.print_impact(_final_impact); end
 
     def self.get(file)
       path = File.expand_path(file)
