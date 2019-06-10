@@ -212,6 +212,11 @@ module TasteTester
     end
 
     def self.impact
+      if TasteTester::Config.json
+        logger.error('JSON output format is not yet implemented')
+        exit(1)
+      end
+
       # Use the repository specified in config.rb to calculate the changes
       # that may affect Chef. These changes will be further analyzed to
       # determine specific roles which may change due to modifed dependencies.
@@ -227,21 +232,13 @@ module TasteTester
       changes = _find_changeset(repo)
 
       # Use Knife (or custom logic) to check the dependencies of each role
-      # against the list of changes. `impact_roles` will contian the set
+      # against the list of changes. `impacted_roles` will contian the set
       # of roles with direct or indirect (dependency) modifications.
-      if TasteTester::Config.use_custom_impact_hook
-        impact_roles = TasteTester::Hooks.custom_impact(changes)
-      else
-        impact_roles = _find_impact(changes)
-      end
+      impacted_roles = TasteTester::Hooks.impact_find_roles(changes)
 
       # Do any post processing required on the list of impacted roles, such
       # as looking up hostnames associated with each role.
-      unless TasteTester::Config.skip_post_impact_hook
-        final_impact = TasteTester::Hooks.post_impact(impact_roles)
-      end
-
-      final_impact ||= impact_roles
+      final_impact = TasteTester::Hooks.post_impact(impacted_roles)
 
       # Print the calculated impact. If a print hook is defined that
       # returns true, then the default print function is skipped.
@@ -285,119 +282,10 @@ module TasteTester
       return changeset
     end
 
-    def self._find_impact(changeset)
-      if TasteTester::Config.relative_cookbook_dirs.length > 1
-        logger.error('Knife deps does not support multiple cookbook paths.')
-        logger.error('Flatten the repository or use the custom_impact hook.')
-        exit(1)
-      end
-
-      cookbooks = Set.new(changeset.cookbooks)
-      roles = Set.new(changeset.roles)
-      databags = Set.new(changeset.databags)
-
-      if cookbooks.empty? && roles.empty?
-        logger.warn('No cookbooks or roles have been modified.')
-        return []
-      end
-
-      unless cookbooks.empty?
-        logger.info('Modified Cookbooks:')
-        cookbooks.each { |cb| logger.info("\t#{cb}") }
-      end
-      unless roles.empty?
-        logger.info('Modified Roles:')
-        roles.each { |r| logger.info("\t#{r}") }
-      end
-      unless databags.empty?
-        logger.info('Modified Databags:')
-        databags.each { |db| logger.info("\t#{db}") }
-      end
-
-      return _find_impact_roles(cookbooks, roles)
-    end
-
-    def self._find_impact_roles(mod_cookbooks, mod_roles)
-      # Now that we have a list of changed cookbooks and roles, we can check
-      # which roles contain modified dependencies. For simplicity, we will
-      # check using brute force by iterating through each role and comparing
-      # its dependencies with the set of modified files. If a match exists,
-      # the role was impacted, otherwise we can move on.
-      # This may change in the future if it is a perfomance bottleneck.
-
-      role_dir = TasteTester::Config.role_dir
-      chef_dir = File.join(TasteTester::Config.repo,
-                           TasteTester::Config.base_dir)
-
-      # CLI options for knife call
-      config = "--config #{TasteTester::Config.knife_config}"
-      chef_path = "--chef-repo-path #{chef_dir}"
-      options = '--tree --recurse'
-
-      # shell out to knife once and parse the resulting file for dependents
-      # if knife did not exit with 0, print whatever it returned and exit
-      logger.info('Finding dependencies (this may take a minute or two)...')
-      knife = Mixlib::ShellOut.new(
-        "knife deps /#{role_dir}/*.rb #{options} #{config} #{chef_path}",
-      )
-      knife.run_command
-      knife.error!
-
-      # create a hash between roles and their dependencies
-      logger.info('Processing dependencies...')
-      deps_tree = _build_dependency_tree(knife.stdout)
-
-      # compare the dependencies of each role to the list of modified
-      # cookbooks, recording the role as impacted if a match exists
-      impact_roles = Set.new(mod_roles.map(&:name))
-      deps_tree.each do |role, deplist|
-        mod_cookbooks.each do |cb|
-          if deplist.include?(cb.name)
-            impact_roles.add(role)
-            logger.info("\tFound dependency: #{role} --> #{cb.name}")
-            break
-          end
-        end
-      end
-
-      return impact_roles
-    end
-
-    def self._build_dependency_tree(deps)
-      # We want to record all nested lines for each role. The top-level roles
-      # will not be indented, indicating they have no dependents. Thus, when
-      # we see a line without indentation, we can start adding subsequent
-      # lines to a list for that line (ie a hash of role -> [deps]). Since we
-      # don't care about precise dependencies for cookbooks, we can lump all
-      # of the indented layers together into the list for the single role.
-      # This is not the most efficient method as repeated cookbooks will list
-      # their dependencies multiple times for each role they are part of,
-      # but the parsing is significantly easier than building a proper graph.
-
-      tree = {}
-      curr_role = nil
-
-      deps.each_line do |line|
-        elem = line.rstrip
-
-        if elem.length == elem.lstrip.length
-          curr_role = elem
-          tree[curr_role] = Set.new()
-        else
-          tree[curr_role].add(File.basename(elem, File.extname(elem)))
-        end
-      end
-
-      return tree
-    end
-
     def self._print_impact(final_impact)
       if TasteTester::Config.json
-        puts 'JSON output not yet supported'
-      end
-      # TODO: convert to an elsif when JSON is supported,
-      # otherwise fall through to normal output
-      if final_impact.empty?
+        # TODO: parse and print final_impact as JSON for downstream processing
+      elsif final_impact.empty?
         logger.warn('No impacted roles were found.')
       else
         logger.warn('The following roles have modified dependencies.' +

@@ -75,9 +75,6 @@ module TasteTester
     skip_post_test_hook false
     skip_repo_checks_hook false
 
-    use_custom_impact_hook false
-    skip_post_impact_hook false
-
     def self.cookbooks
       cookbook_dirs.map do |x|
         File.join(repo, base_dir, x)
@@ -108,6 +105,10 @@ module TasteTester
       else
         databag_dir
       end
+    end
+
+    def self.absolute_base_dir
+      File.join(repo, base_dir)
     end
 
     def self.chef_port
