@@ -237,10 +237,10 @@ module TasteTester
       impacted_roles = TasteTester::Hooks.impact_find_roles(changes)
       impacted_roles ||= _find_roles(changes)
 
-
       # Do any post processing required on the list of impacted roles, such
       # as looking up hostnames associated with each role.
       final_impact = TasteTester::Hooks.post_impact(impacted_roles)
+      final_impact ||= impacted_roles
 
       # Print the calculated impact. If a print hook is defined that
       # returns true, then the default print function is skipped.
