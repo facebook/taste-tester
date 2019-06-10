@@ -212,11 +212,6 @@ module TasteTester
     end
 
     def self.impact
-      if TasteTester::Config.json
-        logger.error('JSON output format is not yet implemented')
-        exit(1)
-      end
-
       # Use the repository specified in config.rb to calculate the changes
       # that may affect Chef. These changes will be further analyzed to
       # determine specific roles which may change due to modifed dependencies.
@@ -366,6 +361,8 @@ module TasteTester
     def self._print_impact(final_impact)
       if TasteTester::Config.json
         # TODO: parse and print final_impact as JSON for downstream processing
+        logger.error('JSON output format is not yet implemented')
+        exit(1)
       elsif final_impact.empty?
         logger.warn('No impacted roles were found.')
       else
