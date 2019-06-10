@@ -48,9 +48,10 @@ module TasteTester
     # Additional checks you want to do on the repo
     def self.repo_checks(_dryrun, _repo); end
 
-    # This should return a Set of roles impacted by changes.
-    # By default, the format is "/roles/{role}.rb"
-    def self.custom_impact(_changeset); end
+    # Find the set of roles dependent on the changed files.
+    # If returning something other than a set of roles, post_impact and/or
+    # print_impact should be specified to handle the output.
+    def self.impact_find_roles(changes); end
 
     # Do stuff after we find impacted roles
     # This should return a Set object with the final impact. To return more
@@ -63,88 +64,6 @@ module TasteTester
     # Customized the printed output of impact
     # If this method returns true, the default output will not be printed.
     def self.print_impact(_final_impact); end
-
-    # Find the set of roles dependent on the changed files.
-    # If returning something other than a set of roles, post_impact and/or
-    # print_impact should be specified to handle the output.
-    def self.impact_find_roles(changes)
-      if TasteTester::Config.relative_cookbook_dirs.length > 1
-        logger.error('Knife deps does not support multiple cookbook paths.')
-        logger.error('Flatten the repo or override the resolve_deps function.')
-        exit(1)
-      end
-
-      cookbooks = Set.new(changes.cookbooks)
-      roles = Set.new(changes.roles)
-      databags = Set.new(changes.databags)
-
-      if cookbooks.empty? && roles.empty?
-        logger.warn('No cookbooks or roles have been modified.')
-        return Set.new
-      end
-
-      unless cookbooks.empty?
-        logger.info('Modified Cookbooks:')
-        cookbooks.each { |cb| logger.info("\t#{cb}") }
-      end
-      unless roles.empty?
-        logger.info('Modified Roles:')
-        roles.each { |r| logger.info("\t#{r}") }
-      end
-      unless databags.empty?
-        logger.info('Modified Databags:')
-        databags.each { |db| logger.info("\t#{db}") }
-      end
-
-      # Use Knife to list the dependecies for each role in the roles directory.
-      # This creates a recursive tree structure that is then searched for
-      # instances of modified cookbooks. This can be slow since it must read
-      # every line of the Knife output, then search all roles for dependencies.
-      # If you have a custom way to calculate these reverse dependencies, this
-      # is the part you would replace.
-      logger.info('Finding dependencies (this may take a minute or two)...')
-      knife = Mixlib::ShellOut.new(
-        "knife deps /#{TasteTester::Config.role_dir}/*.rb" +
-        " --config #{TasteTester::Config.knife_config}" +
-        " --chef-repo-path #{TasteTester::Config.absolute_base_dir}" +
-        ' --tree --recurse'
-      )
-      knife.run_command
-      knife.error!
-
-      # Collapse the output from Knife into a hash structure that maps roles
-      # to the set of their dependencies. This will ignore duplicates in the
-      # Knife output, but must still process each line.
-      logger.info('Processing Dependencies...')
-      deps_hash = {}
-      curr_role = nil
-
-      knife.stdout.each_line do |line|
-        elem = line.rstrip
-        if elem.length == elem.lstrip.length
-          curr_role = elem
-          deps_hash[curr_role] = Set.new
-        else
-          deps_hash[curr_role].add(File.basename(elem, File.extname(elem)))
-        end
-      end
-
-      # Now we can search for modified dependencies by iterating over each
-      # role and checking the hash created earlier. Roles that have been
-      # modified directly are automatically included in the impacted set.
-      impacted_roles = Set.new(roles.map(&:name))
-      deps_hash.each do |role, deplist|
-        cookbooks.each do |cb|
-          if deplist.include?(cb.name)
-            impacted_roles.add(role)
-            logger.info("\tFound dependency: #{role} --> #{cb.name}")
-            break
-          end
-        end
-      end
-
-      return impacted_roles
-    end
 
     def self.get(file)
       path = File.expand_path(file)
