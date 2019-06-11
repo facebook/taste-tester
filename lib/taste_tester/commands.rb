@@ -282,7 +282,8 @@ module TasteTester
     def self._find_roles(changes)
       if TasteTester::Config.relative_cookbook_dirs.length > 1
         logger.error('Knife deps does not support multiple cookbook paths.')
-        logger.error('Flatten the repo or override the resolve_deps function.')
+        logger.error('Please flatten the cookbooks into a single directory' +
+                     ' or override the impact_find_roles function.')
         exit(1)
       end
 
@@ -360,9 +361,7 @@ module TasteTester
 
     def self._print_impact(final_impact)
       if TasteTester::Config.json
-        # TODO: parse and print final_impact as JSON for downstream processing
-        logger.error('JSON output format is not yet implemented')
-        exit(1)
+        puts JSON.pretty_generate(final_impact.to_a)
       elsif final_impact.empty?
         logger.warn('No impacted roles were found.')
       else
