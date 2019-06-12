@@ -91,6 +91,14 @@ module TasteTester
       write(:last_upload_time, time)
     end
 
+    def bundle
+      TasteTester::State.read(:bundle)
+    end
+
+    def bundle=(bundle)
+      write(:bundle, bundle)
+    end
+
     def update(vals)
       merge(vals)
     end

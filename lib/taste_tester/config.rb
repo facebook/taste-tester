@@ -37,6 +37,7 @@ module TasteTester
     config_file '/etc/taste-tester-config.rb'
     plugin_path nil
     chef_zero_path nil
+    bundle false
     verbosity Logger::WARN
     timestamp false
     user 'root'

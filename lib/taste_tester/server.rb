@@ -30,13 +30,14 @@ module TasteTester
     include TasteTester::Logging
     extend ::BetweenMeals::Util
 
-    attr_accessor :user, :host
+    attr_accessor :user, :host, :bundle_dir
 
     def initialize
       @state = TasteTester::State.new
       @ref_file = TasteTester::Config.ref_file
       ref_dir = File.dirname(File.expand_path(@ref_file))
-      @log_file = "#{ref_dir}/chef-zero.log"
+      @log_file = File.join(ref_dir, 'chef-zero.log')
+      @fsroot = File.join(ref_dir, 'root')
       @zero_path = TasteTester::Config.chef_zero_path
       unless File.directory?(ref_dir)
         begin
@@ -46,6 +47,10 @@ module TasteTester
           logger.warn(e)
         end
       end
+      if TasteTester::Config.bundle
+        @bundle_dir = File.join(@fsroot, 'organizations/chef/file_store')
+        FileUtils.mkpath(@bundle_dir)
+      end
 
       @user = ENV['USER']
 
@@ -53,7 +58,8 @@ module TasteTester
       # determines if we listen only on localhost or not
       @need_restart = @state.ssl != TasteTester::Config.use_ssl ||
                       @state.logging != TasteTester::Config.chef_zero_logging ||
-                      @state.ssh != TasteTester::Config.use_ssh_tunnels
+                      @state.ssh != TasteTester::Config.use_ssh_tunnels ||
+                      @state.bundle != TasteTester::Config.bundle
 
       # If we are using SSH tunneling listen on localhost, otherwise listen
       # on all addresses - both v4 and v6. Note that on localhost, ::1 is
@@ -162,6 +168,7 @@ module TasteTester
                       :ssl => TasteTester::Config.use_ssl,
                       :ssh => TasteTester::Config.use_ssh_tunnels,
                       :logging => TasteTester::Config.chef_zero_logging,
+                      :bundle => TasteTester::Config.bundle,
                     })
       logger.info("Starting chef-zero of port #{@state.port}")
       if windows?
@@ -174,6 +181,7 @@ module TasteTester
             ' --log-level debug'
         end
         cmd << ' --ssl' if TasteTester::Config.use_ssl
+        cmd << " --file-store #{@fsroot}" if TasteTester::Config.bundle
         Mixlib::ShellOut.new(cmd).run_command.error!
       end
     end

@@ -41,5 +41,6 @@ Gem::Specification.new do |s|
   }.each do |dep|
     s.add_development_dependency dep
   end
+  s.add_dependency 'minitar', '>= 0.6.1'
   s.add_development_dependency 'rubocop', '= 0.49.1'
 end
