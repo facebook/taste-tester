@@ -210,5 +210,165 @@ module TasteTester
       logger.error(exception.backtrace.join("\n"))
       exit 1
     end
+
+    def self.impact
+      # Use the repository specified in config.rb to calculate the changes
+      # that may affect Chef. These changes will be further analyzed to
+      # determine specific roles which may change due to modifed dependencies.
+      repo = BetweenMeals::Repo.get(
+        TasteTester::Config.repo_type,
+        TasteTester::Config.repo,
+        logger,
+      )
+      if repo && !repo.exists?
+        fail "Could not open repo from #{TasteTester::Config.repo}"
+      end
+
+      changes = _find_changeset(repo)
+
+      # Use Knife (or custom logic) to check the dependencies of each role
+      # against the list of changes. `impacted_roles` will contian the set
+      # of roles with direct or indirect (dependency) modifications.
+      impacted_roles = TasteTester::Hooks.impact_find_roles(changes)
+      impacted_roles ||= _find_roles(changes)
+
+      # Do any post processing required on the list of impacted roles, such
+      # as looking up hostnames associated with each role.
+      final_impact = TasteTester::Hooks.post_impact(impacted_roles)
+      final_impact ||= impacted_roles
+
+      # Print the calculated impact. If a print hook is defined that
+      # returns true, then the default print function is skipped.
+      unless TasteTester::Hooks.print_impact(final_impact)
+        _print_impact(final_impact)
+      end
+    end
+
+    def self._find_changeset(repo)
+      # We want to compare changes in the current directory (working set) with
+      # the "most recent" commit in the VCS. For SVN, this will be the latest
+      # commit on the checked out repository (i.e. 'trunk'). Git/Hg may have
+      # different tags or labels assigned to the master branch, (i.e. 'master',
+      # 'stable', etc.) and should be configured if different than the default.
+      start_ref = case repo
+                  when BetweenMeals::Repo::Svn
+                    repo.latest_revision
+                  when BetweenMeals::Repo::Git
+                    TasteTester::Config.vcs_start_ref_git
+                  when BetweenMeals::Repo::Hg
+                    TasteTester::Config.vcs_start_ref_hg
+                  end
+      end_ref = TasteTester::Config.vcs_end_ref
+
+      changeset = BetweenMeals::Changeset.new(
+        logger,
+        repo,
+        start_ref,
+        end_ref,
+        {
+          :cookbook_dirs =>
+            TasteTester::Config.relative_cookbook_dirs,
+          :role_dir =>
+            TasteTester::Config.relative_role_dir,
+          :databag_dir =>
+            TasteTester::Config.relative_databag_dir,
+        },
+        @track_symlinks,
+      )
+
+      return changeset
+    end
+
+    def self._find_roles(changes)
+      if TasteTester::Config.relative_cookbook_dirs.length > 1
+        logger.error('Knife deps does not support multiple cookbook paths.')
+        logger.error('Please flatten the cookbooks into a single directory' +
+                     ' or override the impact_find_roles function.')
+        exit(1)
+      end
+
+      cookbooks = Set.new(changes.cookbooks)
+      roles = Set.new(changes.roles)
+      databags = Set.new(changes.databags)
+
+      if cookbooks.empty? && roles.empty?
+        logger.warn('No cookbooks or roles have been modified.')
+        return Set.new
+      end
+
+      unless cookbooks.empty?
+        logger.info('Modified Cookbooks:')
+        cookbooks.each { |cb| logger.info("\t#{cb}") }
+      end
+      unless roles.empty?
+        logger.info('Modified Roles:')
+        roles.each { |r| logger.info("\t#{r}") }
+      end
+      unless databags.empty?
+        logger.info('Modified Databags:')
+        databags.each { |db| logger.info("\t#{db}") }
+      end
+
+      # Use Knife to list the dependecies for each role in the roles directory.
+      # This creates a recursive tree structure that is then searched for
+      # instances of modified cookbooks. This can be slow since it must read
+      # every line of the Knife output, then search all roles for dependencies.
+      # If you have a custom way to calculate these reverse dependencies, this
+      # is the part you would replace.
+      logger.info('Finding dependencies (this may take a minute or two)...')
+      knife = Mixlib::ShellOut.new(
+        "knife deps /#{TasteTester::Config.role_dir}/*.rb" +
+        " --config #{TasteTester::Config.knife_config}" +
+        " --chef-repo-path #{TasteTester::Config.absolute_base_dir}" +
+        ' --tree --recurse',
+      )
+      knife.run_command
+      knife.error!
+
+      # Collapse the output from Knife into a hash structure that maps roles
+      # to the set of their dependencies. This will ignore duplicates in the
+      # Knife output, but must still process each line.
+      logger.info('Processing Dependencies...')
+      deps_hash = {}
+      curr_role = nil
+
+      knife.stdout.each_line do |line|
+        elem = line.rstrip
+        if elem.length == elem.lstrip.length
+          curr_role = elem
+          deps_hash[curr_role] = Set.new
+        else
+          deps_hash[curr_role].add(File.basename(elem, File.extname(elem)))
+        end
+      end
+
+      # Now we can search for modified dependencies by iterating over each
+      # role and checking the hash created earlier. Roles that have been
+      # modified directly are automatically included in the impacted set.
+      impacted_roles = Set.new(roles.map(&:name))
+      deps_hash.each do |role, deplist|
+        cookbooks.each do |cb|
+          if deplist.include?(cb.name)
+            impacted_roles.add(role)
+            logger.info("\tFound dependency: #{role} --> #{cb.name}")
+            break
+          end
+        end
+      end
+
+      return impacted_roles
+    end
+
+    def self._print_impact(final_impact)
+      if TasteTester::Config.json
+        puts JSON.pretty_generate(final_impact.to_a)
+      elsif final_impact.empty?
+        logger.warn('No impacted roles were found.')
+      else
+        logger.warn('The following roles have modified dependencies.' +
+                    ' Please test a host in each of these roles.')
+        final_impact.each { |r| logger.warn("\t#{r}") }
+      end
+    end
   end
 end

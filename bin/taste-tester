@@ -90,6 +90,13 @@ MODES:
     cookbooks and roles. It also does a fair amount of sanity checking on
     your repo and you may specify --skip-repo-checks to bypass this.
 
+  impact
+    Examine local repo changes to determine which roles are potentially
+    impacted by the changes. Compares the set of modified cookbooks with the
+    dependency lists of each role and reports any role which depends on a
+    modified cookbook. It is recommended to test your changes on at least one
+    server of each role, potentially also on multiple platforms.
+
   keeptesting
     Extend the testing time on server specified by -s by 1 hour unless
     otherwise specified by -t.
@@ -342,6 +349,13 @@ MODES:
       options[:yes] = true
     end
 
+    opts.on(
+      '--json', 'Format output as JSON for programatic consumption.' +
+      ' Default to false. Works on impact.'
+    ) do
+      options[:json] = true
+    end
+
     opts.separator ''
     opts.separator 'Control local hook behavior with these options:'
 
@@ -420,6 +434,8 @@ MODES:
       TasteTester::Commands.runchef
     when :upload
       TasteTester::Commands.upload
+    when :impact
+      TasteTester::Commands.impact
     else
       logger.error("Invalid mode: #{mode}")
       puts parser

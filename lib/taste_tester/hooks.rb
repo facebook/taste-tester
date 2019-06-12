@@ -48,6 +48,21 @@ module TasteTester
     # Additional checks you want to do on the repo
     def self.repo_checks(_dryrun, _repo); end
 
+    # Find the set of roles dependent on the changed files.
+    # If returning something other than a set of roles, post_impact and/or
+    # print_impact should be specified to handle the output.
+    def self.impact_find_roles(_changes); end
+
+    # Do stuff after we find impacted roles
+    # This should return a Set object with the final impact. To return more
+    # complex data, you must also provide a print_impact function which returns
+    # true to override the default output.
+    def self.post_impact(_impacted_roles); end
+
+    # Customized the printed output of impact
+    # If this method returns true, the default output will not be printed.
+    def self.print_impact(_final_impact); end
+
     def self.get(file)
       path = File.expand_path(file)
       logger.warn("Loading plugin at #{path}")

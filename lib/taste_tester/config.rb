@@ -60,6 +60,15 @@ module TasteTester
     track_symlinks false
     transport 'ssh'
     no_repo false
+    json false
+
+    # Start/End refs for calculating changes in the repo.
+    #  - start_ref should be the "master" commit of the repository
+    #  - end_ref should be nil to compare with the working set,
+    #    or something like '.' to compare with the most recent commit
+    vcs_start_ref_git 'origin/HEAD'
+    vcs_start_ref_hg 'master'
+    vcs_end_ref nil
 
     skip_pre_upload_hook false
     skip_post_upload_hook false
@@ -97,6 +106,10 @@ module TasteTester
       else
         databag_dir
       end
+    end
+
+    def self.absolute_base_dir
+      File.join(repo, base_dir)
     end
 
     def self.chef_port
