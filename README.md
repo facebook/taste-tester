@@ -61,6 +61,7 @@ you want to test on, i.e. SSH public/private keys, SSH certificates, Kerberos
 * Mixlib::Config
 * Colorize
 * BetweenMeals
+* Minitar
 
 ## Automatic Untesting
 
@@ -110,6 +111,10 @@ The following options are also available:
   `#{ENV['HOME']}/.chef/taste-tester-ref.txt`
 * checksum_dir - The checksum directory to put in knife.conf for users. Default:
   `#{ENV['HOME']}/.chef/checksums`
+* bundle - use a single tar.gz file for transporting cookbooks, roles and
+  databags to clients. Experimental.
+  Default: false
+
 
 ## Plugin
 

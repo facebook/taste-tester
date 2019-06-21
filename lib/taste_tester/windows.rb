@@ -40,6 +40,7 @@ module TasteTester
         cmd << " --log-file #{@log_file} --log-level debug"
       end
       cmd << ' --ssl' if TasteTester::Config.use_ssl
+      cmd << " --file-store #{@fsroot}" if TasteTester::Config.bundle
 
       # Mixlib::Shellout will always wait for a process to finish before
       # returning, so we use `spawn` instead.

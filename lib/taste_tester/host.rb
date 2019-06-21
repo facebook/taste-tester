@@ -239,10 +239,55 @@ module TasteTester
 
         log_level :info
         log_location STDOUT
-        chef_server_url '#{url}'
         ssl_verify_mode :verify_none
-        ohai.plugin_path << '#{TasteTester::Config.chef_config_path}/ohai_plugins'
+        ohai.plugin_path << File.join('#{TasteTester::Config.chef_config_path}', 'ohai_plugins')
       ENDOFSCRIPT
+
+      if TasteTester::Config.bundle
+        ttconfig += <<~ENDOFSCRIPT
+          taste_tester_dest = File.join(Dir.tmpdir, 'taste-tester')
+          puts 'INFO: Downloading bundle from #{url}...'
+          FileUtils.rmtree(taste_tester_dest)
+          FileUtils.mkpath(taste_tester_dest)
+          FileUtils.touch(File.join(taste_tester_dest, 'chefignore'))
+          uri = URI('#{url}/file_store/tt.tgz')
+          Net::HTTP.start(
+            uri.host,
+            uri.port,
+            :use_ssl => #{TasteTester::Config.use_ssl},
+            # we expect self signed certificates
+            :verify_mode => OpenSSL::SSL::VERIFY_NONE,
+          ) do |http|
+            http.request_get(uri) do |response|
+              # the use of stringIO means we are buffering the entire file in
+              # memory. This isn't very efficient, but it should work for
+              # most practical cases.
+              stream = Zlib::GzipReader.new(StringIO.new(response.body))
+              Gem::Package::TarReader.new(stream).each do |e|
+                dest = File.join(taste_tester_dest, e.full_name)
+                FileUtils.mkpath(File.dirname(dest))
+                if e.symlink?
+                  File.symlink(e.header.linkname, dest)
+                else
+                  File.open(dest, 'wb+') do |f|
+                    # https://github.com/rubygems/rubygems/pull/2303
+                    # IO.copy_stream(e, f)
+                    # workaround:
+                    f.write(e.read)
+                  end
+                end
+              end
+            end
+          end
+          puts 'INFO: Download complete'
+          solo true
+          local_mode true
+        ENDOFSCRIPT
+      else
+        ttconfig += <<~ENDOFSCRIPT
+          chef_server_url '#{url}'
+        ENDOFSCRIPT
+      end
 
       extra = TasteTester::Hooks.test_remote_client_rb_extra_code(@name)
       if extra
@@ -257,6 +302,14 @@ module TasteTester
       ttconfig += <<~ENDOFSCRIPT
         puts 'INFO: Running on #{@name} in taste-tester by #{@user}'
       ENDOFSCRIPT
+
+      if TasteTester::Config.bundle
+        # This is last in the configuration file because it needs to override
+        # any values in test_remote_client_rb_extra_code
+        ttconfig += <<~ENDOFSCRIPT
+          chef_repo_path taste_tester_dest
+        ENDOFSCRIPT
+      end
       return ttconfig
     end
   end

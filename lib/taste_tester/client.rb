@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require 'minitar'
+require 'find'
 require 'taste_tester/logging'
 require 'between_meals/repo'
 require 'between_meals/knife'
@@ -125,7 +127,88 @@ module TasteTester
 
     private
 
+    def populate(stream, writer, path, destination)
+      full_path = File.join(File.join(TasteTester::Config.repo, path))
+      return unless File.directory?(full_path)
+      # everything is relative to the repo dir. chdir makes handling all the
+      # paths within this simpler
+      Dir.chdir(full_path)
+      Find.find('.') do |p|
+        # ignore current directory. The File.directory? would also skip it,
+        # but we need to do it early because the string is too short for the
+        # next statement.
+        next if p == '.'
+        # paths are enumerated as relative to the input path '.', so we get
+        # './dir/file'. Stripping off the first two characters gives us a
+        # a cleaner 'dir/file' path.
+        name = File.join(destination, p[2..-1])
+        if File.directory?(p)
+          # skip it. This also handles symlinks to directories which aren't
+          # useful either.
+        elsif File.symlink?(p)
+          # tar handling of filenames > 100 characters gets complex. We'd use
+          # split_name from Minitar, but it's a private method. It's
+          # reasonable to assume that all symlink names in the bundle are
+          # less than 100 characters long. Long term, the version of minitar
+          # in chefdk should be upgraded.
+          fail 'Add support for long symlink paths' if name.size > 100
+          # The version of Minitar included in chefdk does not support
+          # symlinks directly. Therefore we use direct writes to the
+          # underlying stream to reproduce the symlinks
+          symlink = {
+            :name => name,
+            :mode => 0644,
+            :typeflag => '2',
+            :size => 0,
+            :linkname => File.readlink(p),
+            :prefix => '',
+          }
+          stream.write(Minitar::PosixHeader.new(symlink))
+        else
+          File.open(p, 'rb') do |r|
+            writer.add_file_simple(
+              name, :mode => 0644, :size => File.size(r)
+            ) do |d, _opts|
+              IO.copy_stream(r, d)
+            end
+          end
+        end
+      end
+    end
+
+    def bundle_upload
+      dest = File.join(@server.bundle_dir, 'tt.tgz')
+      begin
+        Tempfile.create(['tt', '.tgz'], @server.bundle_dir) do |tempfile|
+          stream = Zlib::GzipWriter.new(tempfile)
+          Minitar::Writer.open(stream) do |writer|
+            TasteTester::Config.relative_cookbook_dirs.each do |cb_dir|
+              populate(stream, writer, cb_dir, 'cookbooks')
+            end
+            populate(
+              stream, writer, TasteTester::Config.relative_role_dir, 'roles'
+            )
+            populate(
+              stream, writer, TasteTester::Config.relative_databag_dir,
+              'databag'
+            )
+          end
+          stream.close
+          File.rename(tempfile.path, dest)
+        end
+      rescue Errno::ENOENT
+        # Normally the temporary file is renamed to the dest name. If this
+        # happens, then the cleanup of of the temporary file doesn't work,
+        # but this is fine and expected.
+        nil
+      end
+    end
+
     def full
+      if TasteTester::Config.bundle
+        bundle_upload
+        return
+      end
       logger.warn('Doing full upload')
       @knife.cookbook_upload_all
       @knife.role_upload_all
@@ -133,6 +216,11 @@ module TasteTester
     end
 
     def partial
+      if TasteTester::Config.bundle
+        logger.info('No partial support for bundle mode, doing full upload')
+        bundle_upload
+        return
+      end
       logger.info('Doing differential upload from ' +
                    @server.latest_uploaded_ref)
       changeset = BetweenMeals::Changeset.new(
