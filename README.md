@@ -37,7 +37,7 @@ taste-tester untest [host]   # Put host back in production
                              #   (optional - will revert itself after 1 hour)
 ```
 
-See the help for futher information.
+See the help for further information.
 
 ## Prerequisites
 
