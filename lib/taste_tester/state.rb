@@ -17,6 +17,7 @@
 require 'fileutils'
 require 'socket'
 require 'timeout'
+require 'chef/mash'
 
 require 'between_meals/util'
 require 'taste_tester/config'
@@ -29,9 +30,7 @@ module TasteTester
     include ::BetweenMeals::Util
 
     def initialize
-      ref_dir = File.dirname(
-        File.expand_path(TasteTester::Config.ref_file),
-      )
+      ref_dir = File.dirname(File.expand_path(TasteTester::Config.ref_file))
       unless File.directory?(ref_dir)
         begin
           FileUtils.mkpath(ref_dir)
@@ -136,6 +135,10 @@ module TasteTester
     end
 
     def merge(vals)
+      # we generally use symbols for the keys, but to/from JSON will
+      # give us strings, and thus duplicate keys, which is bad. So
+      # use a Mash
+      state = Mash.new
       begin
         state = JSON.parse(File.read(TasteTester::Config.ref_file))
       rescue StandardError
