@@ -1,3 +1,18 @@
+## 0.0.14
+* Always use the desired knife config
+* Robocop compliance
+* Add "partial failure" reporting
+* Fix race conditions
+* Better detection for existing chef-zero instances
+* README corrections
+* noop transport fixes
+* add `--no-repo` options
+* better error reporting when tunnel setup fails
+* 'profile' mode
+* 'bundle' mode with tar transport
+* Fix statefile key duplication
+* Restore pwd
+
 ## 0.0.13
 * Add a NoOp transport
 * Replace `--locallink` with `--transport`
