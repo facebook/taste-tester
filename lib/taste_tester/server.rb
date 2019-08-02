@@ -65,10 +65,10 @@ module TasteTester
       # on all addresses - both v4 and v6. Note that on localhost, ::1 is
       # v6-only, so we default to 127.0.0.1 instead.
       if TasteTester::Config.use_ssh_tunnels
-        @addr = '127.0.0.1'
+        @addrs = ['127.0.0.1']
         @host = 'localhost'
       else
-        @addr = '::'
+        @addrs = ['::', '0.0.0.0']
         begin
           @host = TasteTester::Config.my_hostname || Socket.gethostname
         rescue StandardError
@@ -175,7 +175,8 @@ module TasteTester
         extend ::TasteTester::Windows
         start_win_chef_zero_server
       else
-        cmd = +"#{chef_zero_path} --host #{@addr} --port #{@state.port} -d"
+        hostarg = @addrs.map { |addr| "--host #{addr}" }.join(' ')
+        cmd = +"#{chef_zero_path} #{hostarg} --port #{@state.port} -d"
         if TasteTester::Config.chef_zero_logging
           cmd << " --log-file #{@log_file}" +
             ' --log-level debug'
