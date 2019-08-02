@@ -1,6 +1,6 @@
 ## 0.0.14
 * Always use the desired knife config
-* Robocop compliance
+* Rubocop compliance
 * Add "partial failure" reporting
 * Fix race conditions
 * Better detection for existing chef-zero instances
