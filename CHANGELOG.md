@@ -8,6 +8,7 @@
 * noop transport fixes
 * add `--no-repo` options
 * better error reporting when tunnel setup fails
+* 'impact' mode
 * 'profile' mode
 * 'bundle' mode with tar transport
 * Fix statefile key duplication
