@@ -226,16 +226,17 @@ module TasteTester
 
       changes = _find_changeset(repo)
 
-      # Use Knife (or custom logic) to check the dependencies of each role
-      # against the list of changes. `impacted_roles` will contian the set
-      # of roles with direct or indirect (dependency) modifications.
-      impacted_roles = TasteTester::Hooks.impact_find_roles(changes)
-      impacted_roles ||= _find_roles(changes)
+      # Perform preliminary impact analysis. By default, use Knife to find
+      # the roles dependent on modified cookbooks. Custom logic may provide
+      # additional information by defining the find_impact plugin method.
+      basic_impact = TasteTester::Hooks.find_impact(changes)
+      basic_impact ||= _find_roles(changes)
 
       # Do any post processing required on the list of impacted roles, such
-      # as looking up hostnames associated with each role.
-      final_impact = TasteTester::Hooks.post_impact(impacted_roles)
-      final_impact ||= impacted_roles
+      # as looking up hostnames associated with each role. By default, pass
+      # the preliminary results through unmodified.
+      final_impact = TasteTester::Hooks.post_impact(basic_impact)
+      final_impact ||= basic_impact
 
       # Print the calculated impact. If a print hook is defined that
       # returns true, then the default print function is skipped.
@@ -283,7 +284,7 @@ module TasteTester
       if TasteTester::Config.relative_cookbook_dirs.length > 1
         logger.error('Knife deps does not support multiple cookbook paths.')
         logger.error('Please flatten the cookbooks into a single directory' +
-                     ' or override the impact_find_roles function.')
+                     ' or define the find_impact method in a local plugin.')
         exit(1)
       end
 
@@ -292,7 +293,9 @@ module TasteTester
       databags = Set.new(changes.databags)
 
       if cookbooks.empty? && roles.empty?
-        logger.warn('No cookbooks or roles have been modified.')
+        unless TasteTester::Config.json
+          logger.warn('No cookbooks or roles have been modified.')
+        end
         return Set.new
       end
 
