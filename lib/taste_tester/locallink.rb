@@ -22,8 +22,6 @@ module TasteTester
     include TasteTester::Logging
     include BetweenMeals::Util
 
-    attr_reader :output, :status
-
     def initialize
       @host = 'localhost'
       @cmds = []
@@ -36,11 +34,11 @@ module TasteTester
     alias << add
 
     def run
-      @status, @output = exec(cmd, logger)
+      exec(cmd, logger)
     end
 
     def run!
-      @status, @output = exec!(cmd, logger)
+      exec!(cmd, logger)
     rescue StandardError => e
       logger.error(e.message)
       error!

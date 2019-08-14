@@ -22,8 +22,6 @@ module TasteTester
     include TasteTester::Logging
     include BetweenMeals::Util
 
-    attr_reader :output, :status
-
     def initialize
       print_noop_warning
       @host = 'localhost'
@@ -48,7 +46,7 @@ module TasteTester
     alias << add
 
     def run
-      @status, @output = run!
+      run!
     end
 
     def run!
