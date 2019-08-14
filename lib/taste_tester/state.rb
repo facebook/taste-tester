@@ -91,7 +91,10 @@ module TasteTester
     end
 
     def bundle
-      TasteTester::State.read(:bundle)
+      val = TasteTester::State.read(:bundle)
+      # promote value to symbol to match config value.
+      return :compatible if val == 'compatible'
+      val
     end
 
     def bundle=(bundle)
