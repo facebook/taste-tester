@@ -138,6 +138,10 @@ module TasteTester
           # but we need to do it early because the string is too short for the
           # next statement.
           next if p == '.'
+          # Overdelivering files is a problem in some cases: attributes,
+          # libraries end up enumerating and evaluating all files. If using
+          # vi(m) the swap file will be mistakenly opened.
+          next if p.end_with?('.swp')
           # paths are enumerated as relative to the input path '.', so we get
           # './dir/file'. Stripping off the first two characters gives us a
           # a cleaner 'dir/file' path.
