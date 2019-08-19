@@ -114,7 +114,10 @@ The following options are also available:
 * checksum_dir - The checksum directory to put in knife.conf for users. Default:
   `#{ENV['HOME']}/.chef/checksums`
 * bundle - use a single tar.gz file for transporting cookbooks, roles and
-  databags to clients. Experimental.
+  databags to clients. Experimental. Value is tri-state:
+  * `false` - server uses knife upload, client uses `chef_server`
+  * `:compatible` - make server support both methods, client uses tar.gz
+  * `true` - server only creates tar.gz, client uses tar.gz
   Default: false
 * impact - analyze local changes to determine which hosts/roles to test.
   Default: false

@@ -210,11 +210,12 @@ module TasteTester
     end
 
     def full
+      logger.warn('Doing full upload')
       if TasteTester::Config.bundle
         bundle_upload
-        return
+        # only leave early if true (strictly bundle mode only)
+        return if TasteTester::Config.bundle == true
       end
-      logger.warn('Doing full upload')
       @knife.cookbook_upload_all
       @knife.role_upload_all
       @knife.databag_upload_all
@@ -224,7 +225,7 @@ module TasteTester
       if TasteTester::Config.bundle
         logger.info('No partial support for bundle mode, doing full upload')
         bundle_upload
-        return
+        return if TasteTester::Config.bundle == true
       end
       logger.info('Doing differential upload from ' +
                    @server.latest_uploaded_ref)
