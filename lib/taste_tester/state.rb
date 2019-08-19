@@ -145,12 +145,9 @@ module TasteTester
         state = {}
       end
       state.merge!(vals)
-      ff = File.open(
-        TasteTester::Config.ref_file,
-        'w',
-      )
-      ff.write(state.to_json)
-      ff.close
+      File.open(TasteTester::Config.ref_file, 'w') do |ff|
+        ff.write(state.to_json)
+      end
     rescue StandardError => e
       logger.error('Unable to write the reffile')
       logger.debug(e)
