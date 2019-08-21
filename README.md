@@ -63,6 +63,7 @@ you want to test on, i.e. SSH public/private keys, SSH certificates, Kerberos
 * Colorize
 * BetweenMeals
 * Minitar
+* Chef
 
 ## Automatic Untesting
 
