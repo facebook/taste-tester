@@ -32,6 +32,7 @@ Gem::Specification.new do |s|
   %w{
     mixlib-config
     colorize
+    chef
   }.each do |dep|
     s.add_dependency dep
   end

@@ -20,6 +20,8 @@ require 'taste_tester/logging'
 require 'between_meals/repo'
 require 'between_meals/knife'
 require 'between_meals/changeset'
+require 'chef/log'
+require 'chef/cookbook/chefignore'
 
 module TasteTester
   # Client side upload functionality
@@ -130,6 +132,7 @@ module TasteTester
     def populate(stream, writer, path, destination)
       full_path = File.join(File.join(TasteTester::Config.repo, path))
       return unless File.directory?(full_path)
+      chefignores = Chef::Cookbook::Chefignore.new(full_path)
       # everything is relative to the repo dir. chdir makes handling all the
       # paths within this simpler
       Dir.chdir(full_path) do
@@ -138,14 +141,20 @@ module TasteTester
           # but we need to do it early because the string is too short for the
           # next statement.
           next if p == '.'
-          # Overdelivering files is a problem in some cases: attributes,
-          # libraries end up enumerating and evaluating all files. If using
-          # vi(m) the swap file will be mistakenly opened.
-          next if p.end_with?('.swp')
           # paths are enumerated as relative to the input path '.', so we get
           # './dir/file'. Stripping off the first two characters gives us a
           # a cleaner 'dir/file' path.
-          name = File.join(destination, p[2..-1])
+          relative_name = p[2..-1]
+          # some exclusions are rooted relative to cookbooks which are one
+          # level below the directory included here. Strip off the first part
+          # of the path. e.g. `fb_cookbook/spec/foo.rb` would be `spec/foo.rb`
+          # which matches `spec/*`.
+          relative_name_minus_first = relative_name.split(
+            File::SEPARATOR,
+          )[1..-1].join(File::SEPARATOR)
+          next if chefignores.ignored?(relative_name) ||
+            chefignores.ignored?(relative_name_minus_first)
+          name = File.join(destination, relative_name)
           if File.directory?(p)
             # skip it. This also handles symlinks to directories which aren't
             # useful either.
