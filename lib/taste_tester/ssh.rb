@@ -51,7 +51,9 @@ SSH returned error while connecting to #{TasteTester::Config.user}@#{@host}
 The host might be broken or your SSH access is not working properly
 Try doing
   #{TasteTester::Config.ssh_command} -v #{TasteTester::Config.user}@#{@host}
-and come back once that works
+to see if ssh connection is good.
+If ssh works, add '-v' key to taste-tester to see the list of commands it's
+trying to execute, and try to run them manually on destination host
       ERRORMESSAGE
       error.lines.each { |x| logger.error x.strip }
       fail TasteTester::Exceptions::SshError
