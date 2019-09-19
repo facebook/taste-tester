@@ -66,7 +66,8 @@ trying to execute, and try to run them manually on destination host
         logger.info("Will run: '#{cmd}' on #{@host}")
       end
       cmds = @cmds.join(' && ')
-      cmd = "#{TasteTester::Config.ssh_command} " +
+      jumps = TasteTester::Config.jumps ? "-J #{TasteTester::Config.jumps}" : ''
+      cmd = "#{TasteTester::Config.ssh_command} #{jumps} " +
             '-T -o BatchMode=yes ' +
             "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
             "#{TasteTester::Config.user}@#{@host} "
