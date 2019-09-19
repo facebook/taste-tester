@@ -1,3 +1,13 @@
+## 0.0.15
+* Add ProxyJump support
+* Better error messages for connection errors
+* Fix dependencies
+* Remove broken `run` keyword
+* Support `chefignore`
+* `bundle` mode improvements
+* handle non-v6 environments properly
+* fix warnings that break `--json`
+
 ## 0.0.14
 * Always use the desired knife config
 * Rubocop compliance
