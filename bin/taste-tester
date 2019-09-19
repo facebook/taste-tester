@@ -293,6 +293,17 @@ MODES:
       options[:roles] = roles
     end
 
+    opts.on(
+      '-J', '--jumps JUMP',
+      'Uses ssh\'s `ProxyJump` support to ssh across bastion/jump hosts. ' +
+      'This is particularly useful in tunnel mode to test machines that ' +
+      'your workstatation doesn\'t have direct access to. The format is ' +
+      'the same as `ssh -J`: a comma-separated list of hosts to forward ' +
+      'through.'
+    ) do |jumps|
+      options[:jumps] = jumps
+    end
+
     opts.on('--really', 'Really do link-only. DANGEROUS!') do |r|
       options[:really] = r
     end

@@ -56,7 +56,8 @@ module TasteTester
       # In most cases the first request from chef was "breaking" the tunnel,
       # in a way that port was still open, but subsequent requests were hanging.
       # This is reproducible and should be looked into.
-      cmd = "#{TasteTester::Config.ssh_command} " +
+      jumps = TasteTester::Config.jumps ? "-J #{TasteTester::Config.jumps}" : ''
+      cmd = "#{TasteTester::Config.ssh_command} #{jumps} " +
             "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
             '-T -o BatchMode=yes ' +
             '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +

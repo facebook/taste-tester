@@ -61,6 +61,7 @@ module TasteTester
     transport 'ssh'
     no_repo false
     json false
+    jumps nil
 
     # Start/End refs for calculating changes in the repo.
     #  - start_ref should be the "master" commit of the repository
