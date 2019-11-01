@@ -39,6 +39,15 @@ module TasteTester
     exit(1)
   end
 
+  # Do an initial read of the config file if it's in the default place, so
+  # that if people override chef_client_command the help message is correct.
+  if File.exists?(File.expand_path(TasteTester::Config.config_file))
+    TasteTester::Config.from_file(
+      File.expand_path(TasteTester::Config.config_file),
+    )
+  end
+
+  cmd = TasteTester::Config.chef_client_command
   description = <<-ENDOFDESCRIPTION
 Welcome to taste-tester!
 
@@ -48,18 +57,16 @@ TLDR; Most common usage is:
   vi cookbooks/...              # Make your changes and commit locally
   taste-tester test -s [host]   # Put host in test mode
   ssh root@[host]               # Log on host
-    # Run chef and watch it break
+  #{format('%-28s', "  #{cmd}")}  # Run chef and watch it break
   vi cookbooks/...              # Fix your cookbooks
   taste-tester upload           # Upload the diff
   ssh root@[host]               # Log on host
-    # Run chef and watch it succeed
+  #{format('%-28s', "  #{cmd}")}  # Run chef and watch it succeed
   <#{verify}>
   taste-tester untest -s [host] # Put host back in production
                                 #   (optional - will revert itself after 1 hour)
 
-And you're done!
-Note: There may be site specific changes, e.g. instead of chef-client you may
-use a wrapper. See local documentation for details.
+And you're done! See the above wiki page for more details.
 
 MODES:
   test
@@ -99,6 +106,11 @@ MODES:
 
   status
     Print out the state of the world.
+
+  run
+    Run #{cmd} on the machine specified by '-s' over SSH and print the output.
+    NOTE!! This is #{'NOT'.red} a sufficient test, you must log onto the remote
+    machine and verify the changes you are trying to make are actually present.
 
   stop
     You probably don't want this. It will shutdown the chef-zero server on
@@ -429,6 +441,8 @@ MODES:
       TasteTester::Commands.test
     when :untest
       TasteTester::Commands.untest
+    when :run
+      TasteTester::Commands.runchef
     when :upload
       TasteTester::Commands.upload
     when :impact

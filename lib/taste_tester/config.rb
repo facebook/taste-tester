@@ -45,6 +45,7 @@ module TasteTester
     knife_config "#{ENV['HOME']}/.chef/knife-#{ENV['USER']}-taste-tester.rb"
     checksum_dir "#{ENV['HOME']}/.chef/checksums"
     skip_repo_checks false
+    chef_client_command 'chef-client'
     testing_time 3600
     chef_port_range [5000, 5500]
     tunnel_port 4001
