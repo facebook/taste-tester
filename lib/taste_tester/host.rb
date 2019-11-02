@@ -51,7 +51,7 @@ module TasteTester
       transport << TasteTester::Config.chef_client_command
 
       io = IO.new(1)
-      status, output = transport.run(io)
+      status, = transport.run(io)
       logger.warn("Finished #{TasteTester::Config.chef_client_command}" +
                   " on #{@name} with status #{status}")
       if status.zero?
