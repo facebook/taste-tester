@@ -34,12 +34,12 @@ module TasteTester
 
     alias << add
 
-    def run
-      exec(cmd, logger)
+    def run(stream=nil)
+      exec(cmd, logger, stream)
     end
 
-    def run!
-      exec!(cmd, logger)
+    def run!(stream=nil)
+      exec!(cmd, logger, stream)
     rescue StandardError => e
       logger.error(e.message)
       error!

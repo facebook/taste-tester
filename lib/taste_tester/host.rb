@@ -47,25 +47,11 @@ module TasteTester
     def runchef
       logger.warn("Running '#{TasteTester::Config.chef_client_command}' " +
                   "on #{@name}")
-      cmd = "#{TasteTester::Config.ssh_command} " +
-            "#{TasteTester::Config.user}@#{@name} "
-      if TasteTester::Config.user != 'root'
-        cc = Base64.encode64(cmd).delete("\n")
-        cmd += "\"echo '#{cc}' | base64 --decode | sudo bash -x\""
-      else
-        cmd += "\"#{cmd}\""
-      end
-      status = IO.popen(
-        cmd,
-      ) do |io|
-        # rubocop:disable AssignmentInCondition
-        while line = io.gets
-          puts line.chomp!
-        end
-        # rubocop:enable AssignmentInCondition
-        io.close
-        $CHILD_STATUS.to_i
-      end
+      transport = get_transport
+      transport << TasteTester::Config.chef_client_command
+
+      io = IO.new(1)
+      status, output = transport.run(io)
       logger.warn("Finished #{TasteTester::Config.chef_client_command}" +
                   " on #{@name} with status #{status}")
       if status.zero?
