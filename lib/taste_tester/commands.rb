@@ -158,7 +158,7 @@ module TasteTester
       server = TasteTester::Server.new
       hosts.each do |hostname|
         host = TasteTester::Host.new(hostname, server)
-        host.run
+        host.runchef
       end
     end
 

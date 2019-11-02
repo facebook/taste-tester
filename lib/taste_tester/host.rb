@@ -50,10 +50,10 @@ module TasteTester
       cmd = "#{TasteTester::Config.ssh_command} " +
             "#{TasteTester::Config.user}@#{@name} "
       if TasteTester::Config.user != 'root'
-        cc = Base64.encode64(cmds).delete("\n")
+        cc = Base64.encode64(cmd).delete("\n")
         cmd += "\"echo '#{cc}' | base64 --decode | sudo bash -x\""
       else
-        cmd += "\"#{cmds}\""
+        cmd += "\"#{cmd}\""
       end
       status = IO.popen(
         cmd,
