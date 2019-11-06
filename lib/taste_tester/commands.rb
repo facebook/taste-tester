@@ -149,6 +149,19 @@ module TasteTester
       end
     end
 
+    def self.runchef
+      hosts = TasteTester::Config.servers
+      unless hosts
+        logger.warn('You must provide a hostname')
+        exit(1)
+      end
+      server = TasteTester::Server.new
+      hosts.each do |hostname|
+        host = TasteTester::Host.new(hostname, server)
+        host.runchef
+      end
+    end
+
     def self.keeptesting
       hosts = TasteTester::Config.servers
       unless hosts

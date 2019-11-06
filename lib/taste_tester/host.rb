@@ -44,6 +44,24 @@ module TasteTester
       end
     end
 
+    def runchef
+      logger.warn("Running '#{TasteTester::Config.chef_client_command}' " +
+                  "on #{@name}")
+      transport = get_transport
+      transport << TasteTester::Config.chef_client_command
+
+      io = IO.new(1)
+      status, = transport.run(io)
+      logger.warn("Finished #{TasteTester::Config.chef_client_command}" +
+                  " on #{@name} with status #{status}")
+      if status.zero?
+        msg = "#{TasteTester::Config.chef_client_command} was successful" +
+              ' - please log to the host and confirm all the intended' +
+              ' changes were made'
+        logger.error msg.upcase
+      end
+    end
+
     def get_transport
       case TasteTester::Config.transport
       when 'locallink'
