@@ -66,7 +66,8 @@ TLDR; Most common usage is:
   taste-tester untest -s [host] # Put host back in production
                                 #   (optional - will revert itself after 1 hour)
 
-And you're done! See the above wiki page for more details.
+And you're done!
+Note: There may be site specific testing instructions, see local documentation for details.
 
 MODES:
   test
