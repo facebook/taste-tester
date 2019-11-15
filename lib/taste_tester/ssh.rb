@@ -46,29 +46,34 @@ module TasteTester
     end
 
     def error!
-      error = <<-ERRORMESSAGE
+      error = <<~ERRORMESSAGE
 SSH returned error while connecting to #{TasteTester::Config.user}@#{@host}
 The host might be broken or your SSH access is not working properly
 Try doing
-  #{TasteTester::Config.ssh_command} -v #{TasteTester::Config.user}@#{@host}
+
+    #{ssh_base_cmd} -v #{TasteTester::Config.user}@#{@host}
+
 to see if ssh connection is good.
 If ssh works, add '-v' key to taste-tester to see the list of commands it's
 trying to execute, and try to run them manually on destination host
       ERRORMESSAGE
-      error.lines.each { |x| logger.error x.strip }
+      logger.error(error)
       fail TasteTester::Exceptions::SshError
     end
 
     private
+
+    def ssh_base_cmd
+      jumps = TasteTester::Config.jumps ? "-J #{TasteTester::Config.jumps}" : ''
+      "#{TasteTester::Config.ssh_command} #{jumps}"
+    end
 
     def cmd
       @cmds.each do |cmd|
         logger.info("Will run: '#{cmd}' on #{@host}")
       end
       cmds = @cmds.join(' && ')
-      jumps = TasteTester::Config.jumps ? "-J #{TasteTester::Config.jumps}" : ''
-      cmd = "#{TasteTester::Config.ssh_command} #{jumps} " +
-            '-T -o BatchMode=yes ' +
+      cmd = "#{ssh_base_cmd} -T -o BatchMode=yes " +
             "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
             "#{TasteTester::Config.user}@#{@host} "
       if TasteTester::Config.user != 'root'
