@@ -16,7 +16,6 @@
 
 require 'fileutils'
 require 'socket'
-require 'timeout'
 
 require 'between_meals/util'
 require 'taste_tester/config'

@@ -76,11 +76,12 @@ trying to execute, and try to run them manually on destination host
       cmd = "#{ssh_base_cmd} -T -o BatchMode=yes " +
             "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
             "#{TasteTester::Config.user}@#{@host} "
+      cc = Base64.encode64(cmds).delete("\n")
+      cmd += "\"echo '#{cc}' | base64 --decode"
       if TasteTester::Config.user != 'root'
-        cc = Base64.encode64(cmds).delete("\n")
-        cmd += "\"echo '#{cc}' | base64 --decode | sudo bash -x\""
+        cmd += ' | sudo bash -x"'
       else
-        cmd += "\'#{cmds}\'"
+        cmd += ' | bash -x"'
       end
       cmd
     end
