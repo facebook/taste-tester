@@ -14,7 +14,7 @@
 
 Gem::Specification.new do |s|
   s.name = 'taste_tester'
-  s.version = '0.0.15'
+  s.version = '0.0.16'
   s.homepage = 'https://github.com/facebook/taste-tester'
   s.platform = Gem::Platform::RUBY
   s.summary = 'Taste Tester'
@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
             Dir.glob('bin/*') + Dir.glob('scripts/*')
   s.executables = 'taste-tester'
   s.license = 'Apache-2.0'
-  s.add_dependency 'between_meals', '>= 0.0.6'
+  s.add_dependency 'between_meals', '>= 0.0.10'
   # without an explicit dependency, json is resolved to 1.7.7 on Ruby 2.4
   # which doesn't compile.
   s.add_dependency 'json', '>= 2.0.0'
