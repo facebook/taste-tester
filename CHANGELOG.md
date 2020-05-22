@@ -1,3 +1,12 @@
+## 0.0.16
+* Fix the 'run' subcommand - no longer errors out and streams correclty
+* Fix the 'debug' command given to users when SSH fails with Jump hosts
+* Significant improvements to SSH tunnel handling
+    * Tunnel will last as long as the test
+    * Tunnel is torn down properly regardless of mode
+    * Tunnel removal is syslogged if 'logger' is available
+* License in gemspec if a proper shortname for Apache 2.0
+
 ## 0.0.15
 * Add ProxyJump support
 * Better error messages for connection errors
