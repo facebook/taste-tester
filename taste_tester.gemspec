@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
   # without an explicit dependency, json is resolved to 1.7.7 on Ruby 2.4
   # which doesn't compile.
   s.add_dependency 'json', '>= 2.0.0'
+  s.add_dependency 'minitar', '>= 0.6.1'
   %w{
     mixlib-config
     colorize
@@ -39,9 +40,12 @@ Gem::Specification.new do |s|
   %w{
     chef-zero
     knife-solo
+    rspec-core
+    rspec-expectations
+    rspec-mocks
+    simplecov
   }.each do |dep|
     s.add_development_dependency dep
   end
-  s.add_dependency 'minitar', '>= 0.6.1'
-  s.add_development_dependency 'rubocop', '= 0.49.1'
+  s.add_development_dependency 'rubocop', '0.49.1'
 end
