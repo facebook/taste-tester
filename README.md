@@ -1,6 +1,6 @@
 # Taste Tester
 
-[![CircleCI](https://circleci.com/gh/facebook/taste-tester.svg?style=svg)](https://circleci.com/gh/facebook/taste-tester)
+![Continuous Integration](https://github.com/facebook/taste-tester/workflows/Continuous%20Integration/badge.svg?event=push)
 
 ## Intro
 Ohai!
