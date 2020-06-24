@@ -105,7 +105,7 @@ The following options are also available:
 * base_dir - The directory in the repo under which to find chef configs.
   Default: `chef`
 * cookbook_dirs - An array of cookbook directories relative to base_dir.
-  Default: `['cookbooks']
+  Default: `['cookbooks']`
 * role_dir - A directory of roles, relative to base_dir. Default: `roles`
 * databag_dir - A directory of databags, relative to base_dir.
   Default: `databags`
@@ -121,7 +121,6 @@ The following options are also available:
   Default: false
 * impact - analyze local changes to determine which hosts/roles to test.
   Default: false
-
 
 ## Plugin
 
@@ -180,10 +179,11 @@ Custom output of calculated impact, useful if defining either of the other
 impact hooks. Must return a truthy value to prevent the default output from
 printing.
 
-**Plugin example**
+## Plugin example
 
 This is an example `/etc/taste-tester-plugin.rb` to add a user-defined string
 to `client-taste-tester.rb` on the remote system:
+
 ```
 Hooks.class_eval do
   def self.test_remote_client_rb_extra_code(_hostname)
@@ -194,6 +194,7 @@ Hooks.class_eval do
   end
 end
 ```
+
 Be sure to pass this plugin file with `-p` on the command line or set it as
 `plugin_path` in your `taste-tester-config.rb` file.
 
