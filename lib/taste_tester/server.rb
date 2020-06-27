@@ -161,7 +161,7 @@ module TasteTester
     end
 
     def start_chef_zero
-      File.unlink(@log_file) if File.exists?(@log_file)
+      File.unlink(@log_file) if File.exist?(@log_file)
       @state.update({
                       :port => TasteTester::Config.chef_port,
                       :ssl => TasteTester::Config.use_ssl,

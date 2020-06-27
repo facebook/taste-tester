@@ -66,7 +66,7 @@ module TasteTester
     def self.get(file)
       path = File.expand_path(file)
       logger.warn("Loading plugin at #{path}") unless TasteTester::Config.json
-      unless File.exists?(path)
+      unless File.exist?(path)
         logger.error('Plugin file not found')
         exit(1)
       end

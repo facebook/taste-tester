@@ -119,7 +119,7 @@ module TasteTester
 
     def real_wipe
       if TasteTester::Config.ref_file &&
-         File.exists?(TasteTester::Config.ref_file)
+         File.exist?(TasteTester::Config.ref_file)
         File.delete(TasteTester::Config.ref_file)
       end
     end
