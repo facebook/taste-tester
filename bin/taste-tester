@@ -41,7 +41,7 @@ module TasteTester
 
   # Do an initial read of the config file if it's in the default place, so
   # that if people override chef_client_command the help message is correct.
-  if File.exists?(File.expand_path(TasteTester::Config.config_file))
+  if File.exist?(File.expand_path(TasteTester::Config.config_file))
     TasteTester::Config.from_file(
       File.expand_path(TasteTester::Config.config_file),
     )
@@ -136,7 +136,6 @@ MODES:
   end
 
   options = { :config_file => TasteTester::Config.config_file }
-  # rubocop:disable Metrics/BlockLength
   parser = OptionParser.new do |opts|
     opts.banner = description
 
@@ -144,7 +143,7 @@ MODES:
     opts.separator 'Global options:'.upcase
 
     opts.on('-c', '--config FILE', 'Config file') do |file|
-      unless File.exists?(File.expand_path(file))
+      unless File.exist?(File.expand_path(file))
         logger.error("Sorry, cannot find #{file}")
         exit(1)
       end
@@ -161,7 +160,7 @@ MODES:
     end
 
     opts.on('-p', '--plugin-path FILE', String, 'Plugin file') do |file|
-      unless File.exists?(File.expand_path(file))
+      unless File.exist?(File.expand_path(file))
         logger.error("Sorry, cannot find #{file}")
         exit(1)
       end
@@ -245,12 +244,10 @@ MODES:
       'Until when should the host remain in testing.' +
       ' Anything parsable is ok, such as "5/18 4:35" or "16/9/13".'
     ) do |time|
-      begin
-        options[:testing_until] = Time.parse(time)
-      rescue StandardError
-        logger.error("Invalid date: #{time}")
-        exit 1
-      end
+      options[:testing_until] = Time.parse(time)
+    rescue StandardError
+      logger.error("Invalid date: #{time}")
+      exit 1
     end
 
     opts.on(
@@ -401,7 +398,6 @@ MODES:
       options[:skip_post_test_hook] = true
     end
   end
-  # rubocop:enable Metrics/BlockLength
 
   if mode == 'help'
     puts parser
@@ -410,7 +406,7 @@ MODES:
 
   parser.parse!
 
-  if File.exists?(File.expand_path(options[:config_file]))
+  if File.exist?(File.expand_path(options[:config_file]))
     TasteTester::Config.from_file(File.expand_path(options[:config_file]))
   end
   TasteTester::Config.merge!(options)
@@ -419,7 +415,7 @@ MODES:
 
   if TasteTester::Config.plugin_path
     path = File.expand_path(TasteTester::Config.plugin_path)
-    unless File.exists?(path)
+    unless File.exist?(path)
       logger.error("Plugin not found (#{path})")
       exit(1)
     end
@@ -459,5 +455,7 @@ MODES:
 end
 
 if $PROGRAM_NAME == __FILE__
-  include TasteTester
+  module TasteTester
+    include TasteTester
+  end
 end
