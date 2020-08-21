@@ -14,11 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require 'taste_tester/logging'
+require 'between_meals/util'
+require 'taste_tester/ssh_util'
+
 module TasteTester
   # Thin ssh tunnel wrapper
   class Tunnel
     include TasteTester::Logging
     include BetweenMeals::Util
+    include TasteTester::SSH::Util
 
     attr_reader :port
 
@@ -33,18 +38,100 @@ module TasteTester
       exec!(cmd, logger)
     rescue StandardError => e
       logger.error "Failed bringing up ssh tunnel: #{e}"
-      exit(1)
+      error!
     end
 
     def cmd
-      @ts = TasteTester::Config.testing_end_time.strftime('%y%m%d%H%M.%S')
+      if TasteTester::Config.windows_target
+        cmds = windows_tunnel_cmd
+      else
+        cmds = sane_os_tunnel_cmd
+      end
 
+      # As great as it would be to have ExitOnForwardFailure=yes,
+      # we had multiple cases of tunnels dying
+      # if -f and ExitOnForwardFailure are used together.
+      # In most cases the first request from chef was "breaking" the tunnel,
+      # in a way that port was still open, but subsequent requests were hanging.
+      # This is reproducible and should be looked into.
+      cmd = "#{ssh_base_cmd} -o ServerAliveInterval=10 " +
+        "-o ServerAliveCountMax=6 -f -R #{@port}:localhost:#{@server.port} "
+      build_ssh_cmd(cmd, [cmds])
+    end
+
+    def self.kill(name)
+      ssh = TasteTester::SSH.new(name)
+      # Since commands are &&'d together, and we're using &&, we need to
+      # surround this in paryns, and make sure as a whole it evaluates
+      # to true so it doesn't mess up other things... even though this is
+      # the only thing we're currently executing in this SSH.
+      if TasteTester::Config.windows_target
+        cmd = <<~EOPS
+          if (Test-Path "#{TasteTester::Config.timestamp_file}") {
+            $x = cat "#{TasteTester::Config.timestamp_file}"
+            if ($x -ne $null) {
+              kill -Force $x 2>$null
+            }
+          }
+          $LASTEXITCODE = 0
+        EOPS
+      else
+        cmd = "( [ -s #{TasteTester::Config.timestamp_file} ]" +
+              ' && kill -9 -- ' +
+              "-\$(cat #{TasteTester::Config.timestamp_file}) 2>/dev/null; " +
+              ' true )'
+      end
+      ssh << cmd
+      ssh.run!
+    end
+
+    private
+
+    def windows_tunnel_cmd
+      # We are powershell. If you walk up you get:
+      #   ppid - ssh
+      #   pppid - ssh
+      #   ppppid - ssh
+      #   pppppid - services
+      #
+      # Unlike in Linux you don't need to walk up the tree, however. In fact,
+      # killing pppid or ppid didn't actually terminate the session. Only
+      # killing our actual powershell instance did.
+      #
+      # Moreover, it doesn't seem like re-parenting works the same way. So
+      # this is pretty simple.
+      #
+      # For the record, if you want to play with this, you do so with:
+      #   (gwmi win32_process | ? processid -eq $PID).parentprocessid
+      #
+      # Also note that backtick is a line-continuation marker in powershell.
+      <<~EOS
+      $ts = "#{TasteTester::Config.timestamp_file}"
+      echo $PID | Out-File -Encoding ASCII "$ts"
+      # TODO: pull this from Host.touchcmd
+      (Get-Item "$ts").LastWriteTime=("#{TasteTester::Config.testing_end_time}")
+
+      while (1 -eq 1) {
+        if (-Not (Test-Path $ts)) {
+          # if we are here, we know we've created our source
+          Write-EventLog -LogName "Application" -Source "taste-tester" `
+            -EventID 5 -EntryType Information `
+            -Message "Ending tunnel: timestamp file disappeared"
+        }
+        sleep 60
+      }
+      done
+      EOS
+    end
+
+    def sane_os_tunnel_cmd
+      @ts = TasteTester::Config.testing_end_time.strftime('%y%m%d%H%M.%S')
       # Tie the life of our SSH tunnel with the life of timestamp file.
       # taste-testing can be renewed, so we'll wait until:
       # 1. the timestamp file is entirely gone
       # 2. our parent sshd process dies
       # 3. new taste-tester instance is running (file contains different PGID)
-      cmds = <<~EOS
+      <<~EOS
       log() {
         [ -e /usr/bin/logger ] || return
         logger -t taste-tester "$*"
@@ -111,6 +198,7 @@ module TasteTester
       SSH_PGID=$current_pgid
 
       echo $SSH_PGID > #{TasteTester::Config.timestamp_file} && \
+      # TODO: pull this from Host.touchcmd
       touch -t #{@ts} #{TasteTester::Config.timestamp_file} && \
       while true; do
         if ! [ -f "#{TasteTester::Config.timestamp_file}" ]; then
@@ -130,44 +218,6 @@ module TasteTester
         sleep 60
       done
       EOS
-      # As great as it would be to have ExitOnForwardFailure=yes,
-      # we had multiple cases of tunnels dying
-      # if -f and ExitOnForwardFailure are used together.
-      # In most cases the first request from chef was "breaking" the tunnel,
-      # in a way that port was still open, but subsequent requests were hanging.
-      # This is reproducible and should be looked into.
-      jumps = TasteTester::Config.jumps ? "-J #{TasteTester::Config.jumps}" : ''
-      cmd = "#{TasteTester::Config.ssh_command} #{jumps} " +
-            "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
-            '-T -o BatchMode=yes ' +
-            '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
-            '-o ServerAliveInterval=10 -o ServerAliveCountMax=6 ' +
-            "-f -R #{@port}:localhost:#{@server.port} "
-      cc = Base64.encode64(cmds).delete("\n")
-
-      # always base64 encode the command so we don't have to deal with quoting
-      cmd += "#{TasteTester::Config.user}@#{@host} \"echo '#{cc}' | base64" +
-             ' --decode'
-      if TasteTester::Config.user != 'root'
-        cmd += ' | sudo bash -x"'
-      else
-        cmd += ' | bash -x"'
-      end
-      cmd
-    end
-
-    def self.kill(name)
-      ssh = TasteTester::SSH.new(name)
-      # Since commands are &&'d together, and we're using &&, we need to
-      # surround this in paryns, and make sure as a whole it evaluates
-      # to true so it doesn't mess up other things... even though this is
-      # the only thing we're currently executing in this SSH.
-      cmd = "( [ -s #{TasteTester::Config.timestamp_file} ]" +
-            ' && kill -9 -- ' +
-            "-\$(cat #{TasteTester::Config.timestamp_file}) 2>/dev/null; " +
-            ' true )'
-      ssh << cmd
-      ssh.run!
     end
   end
 end

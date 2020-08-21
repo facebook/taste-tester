@@ -15,12 +15,14 @@
 # limitations under the License.
 
 require 'taste_tester/exceptions'
+require 'taste_tester/ssh_util'
 
 module TasteTester
   # Thin ssh wrapper
   class SSH
     include TasteTester::Logging
     include BetweenMeals::Util
+    include TasteTester::SSH::Util
 
     def initialize(host, tunnel = false)
       @host = host
@@ -45,45 +47,13 @@ module TasteTester
       error!
     end
 
-    def error!
-      error = <<~ERRORMESSAGE
-SSH returned error while connecting to #{TasteTester::Config.user}@#{@host}
-The host might be broken or your SSH access is not working properly
-Try doing
-
-    #{ssh_base_cmd} -v #{TasteTester::Config.user}@#{@host}
-
-to see if ssh connection is good.
-If ssh works, add '-v' key to taste-tester to see the list of commands it's
-trying to execute, and try to run them manually on destination host
-      ERRORMESSAGE
-      logger.error(error)
-      fail TasteTester::Exceptions::SshError
-    end
-
     private
-
-    def ssh_base_cmd
-      jumps = TasteTester::Config.jumps ? "-J #{TasteTester::Config.jumps}" : ''
-      "#{TasteTester::Config.ssh_command} #{jumps}"
-    end
 
     def cmd
       @cmds.each do |cmd|
         logger.info("Will run: '#{cmd}' on #{@host}")
       end
-      cmds = @cmds.join(' && ')
-      cmd = "#{ssh_base_cmd} -T -o BatchMode=yes " +
-            "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
-            "#{TasteTester::Config.user}@#{@host} "
-      cc = Base64.encode64(cmds).delete("\n")
-      cmd += "\"echo '#{cc}' | base64 --decode"
-      if TasteTester::Config.user != 'root'
-        cmd += ' | sudo bash -x"'
-      else
-        cmd += ' | bash -x"'
-      end
-      cmd
+      build_ssh_cmd(ssh_base_cmd, @cmds)
     end
   end
 end
