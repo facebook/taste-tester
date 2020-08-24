@@ -14,19 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CONFIG_PATH='/etc/chef'
-CONFIG_NAME='client'
-
-CONFIG_FILE="${CONFIG_FILE:-/etc/taste-untester-config}"
-if [ -e "$CONFIG_FILE" ]; then
-  source "$COFNIG_FILE"
-fi
-
+# default configs
 CONFLINK='/etc/chef/client.rb'
 PRODCONF='/etc/chef/client-prod.rb'
 CERTLINK='/etc/chef/client.pem'
 PRODCERT='/etc/chef/client-prod.pem'
 STAMPFILE='/etc/chef/test_timestamp'
+
+# let the config file overwrite them
+CONFIG_FILE="${CONFIG_FILE:-/etc/taste-untester-config}"
+if [ -e "$CONFIG_FILE" ]; then
+  source "$CONFIG_FILE"
+fi
+
 MYSELF=$0
 DRYRUN=0
 DEBUG=0
