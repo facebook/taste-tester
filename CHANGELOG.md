@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.17
+* Add support for Windows target hosts. See help for `-w` and #144 for details
+* Fix bug in `taste-untester` where ignored the config file
+* Various lint and gemspec cleanups
+* Improved symlink handling in cookbook and other dirs
+
 ## 0.0.16
 * Fix the 'run' subcommand - no longer errors out and streams correclty
 * Fix the 'debug' command given to users when SSH fails with Jump hosts
