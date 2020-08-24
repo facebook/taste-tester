@@ -111,12 +111,18 @@ module TasteTester
       # TODO: pull this from Host.touchcmd
       (Get-Item "$ts").LastWriteTime=("#{TasteTester::Config.testing_end_time}")
 
-      while (1 -eq 1) {
+      while ($true) {
         if (-Not (Test-Path $ts)) {
           # if we are here, we know we've created our source
-          Write-EventLog -LogName "Application" -Source "taste-tester" `
-            -EventID 5 -EntryType Information `
-            -Message "Ending tunnel: timestamp file disappeared"
+          $splat = @{
+            LogName = "Application"
+            Source = "taste-tester"
+            EventID = 5
+            EntryType = "Information"
+            Message = "Ending tunnel: timestamp file disappeared"
+          }
+          Write-EventLog @splat
+          break
         }
         sleep 60
       }
