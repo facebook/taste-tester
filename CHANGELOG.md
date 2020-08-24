@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.18
+* Fix broken `test` mode on Linux
+
 ## 0.0.17
 * Add support for Windows target hosts. See help for `-w` and #144 for details
 * Fix bug in `taste-untester` where ignored the config file
