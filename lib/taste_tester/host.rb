@@ -163,7 +163,6 @@ module TasteTester
             }
           }
         ENDOFSHELLCODE
-        shellcode.chomp
       else
         shellcode = <<~ENDOFSHELLCODE
           awk "\\$0 ~ /^#{USER_PREAMBLE}/{
@@ -173,9 +172,8 @@ module TasteTester
             }
           }" #{config_file}
         ENDOFSHELLCODE
-        shellcode.delete("\n")
       end
-      shellcode
+      shellcode.chomp
     end
 
     def keeptesting
