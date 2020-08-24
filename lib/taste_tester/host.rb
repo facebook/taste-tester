@@ -92,20 +92,11 @@ module TasteTester
       # see if someone else is taste-testing
       transport << we_testing
 
-      transport << 'logger -t taste-tester Moving server into taste-tester' +
-        " for #{@user}"
-      transport << touchcmd
-      # shell redirection is also racy, so make a temporary file first
-      transport << "tmpconf=$(mktemp #{TasteTester::Config.chef_config_path}/" +
-        "#{TASTE_TESTER_CONFIG}.TMPXXXXXX)"
-      transport << "/bin/echo -n \"#{serialized_config}\" | base64 --decode" +
-        ' > "${tmpconf}"'
-      # then rename it to replace any existing file
-      transport << 'mv -f "${tmpconf}" ' +
-        "#{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}"
-      transport << "( ln -vsf #{TasteTester::Config.chef_config_path}" +
-        "/#{TASTE_TESTER_CONFIG} #{TasteTester::Config.chef_config_path}/" +
-        "#{TasteTester::Config.chef_config}; true )"
+      if TasteTester::Config.windows_target
+        add_windows_test_cmds(transport, serialized_config)
+      else
+        add_sane_os_test_cmds(transport, serialized_config)
+      end
 
       # look again to see if someone else is taste-testing. This is where
       # we work out if we won or lost a race with another user.
@@ -142,18 +133,10 @@ module TasteTester
       if TasteTester::Config.use_ssh_tunnels
         TasteTester::Tunnel.kill(@name)
       end
-      config_prod = TasteTester::Config.chef_config.split('.').join('-prod.')
-      [
-        "ln -vsf #{TasteTester::Config.chef_config_path}/#{config_prod} " +
-          "#{TasteTester::Config.chef_config_path}/" +
-          TasteTester::Config.chef_config,
-        "ln -vsf #{TasteTester::Config.chef_config_path}/client-prod.pem " +
-          "#{TasteTester::Config.chef_config_path}/client.pem",
-        "rm -vf #{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}",
-        "rm -vf #{TasteTester::Config.timestamp_file}",
-        'logger -t taste-tester Returning server to production',
-      ].each do |cmd|
-        transport << cmd
+      if TasteTester::Config.windows_target
+        add_windows_untest_cmds(transport)
+      else
+        add_sane_os_untest_cmds(transport)
       end
       transport.run!
     end
@@ -168,15 +151,31 @@ module TasteTester
       #    short circuits the test verb
       # This is written as a squiggly heredoc so the indentation of the awk is
       # preserved. Later we remove the newlines to make it a bit easier to read.
-      shellcode = <<~ENDOFSHELLCODE
-        awk "\\$0 ~ /^#{USER_PREAMBLE}/{
-          if (\\$NF != \\"#{@user}\\"){
-            print \\$NF;
-            exit 42
+      if TasteTester::Config.windows_target
+        shellcode = <<~ENDOFSHELLCODE
+          Get-Content #{config_file} | ForEach-Object {
+            if (\$_ -match "#{USER_PREAMBLE}" ) {
+              $user = \$_.Split()[-1]
+              if (\$user -ne "#{@user}") {
+                echo \$user
+                exit 42
+              }
+            }
           }
-        }" #{config_file}
-      ENDOFSHELLCODE
-      shellcode.delete("\n")
+        ENDOFSHELLCODE
+        shellcode.chomp
+      else
+        shellcode = <<~ENDOFSHELLCODE
+          awk "\\$0 ~ /^#{USER_PREAMBLE}/{
+            if (\\$NF != \\"#{@user}\\"){
+              print \\$NF;
+              exit 42
+            }
+          }" #{config_file}
+        ENDOFSHELLCODE
+        shellcode.delete("\n")
+      end
+      shellcode
     end
 
     def keeptesting
@@ -195,15 +194,140 @@ module TasteTester
 
     private
 
+    # Sources must be 'registered' with the Eventlog, so check if we have
+    # registered and register if necessary
+    def create_eventlog_if_needed_cmd
+      get_src = 'Get-EventLog -LogName Application -source taste-tester 2>$null'
+      mk_src = 'New-EventLog -source "taste-tester" -LogName Application'
+      "if (-Not (#{get_src})) { #{mk_src} }"
+    end
+
+    # Remote testing commands for most OSes...
+    def add_sane_os_test_cmds(transport, serialized_config)
+      transport << 'logger -t taste-tester Moving server into taste-tester' +
+        " for #{@user}"
+      transport << touchcmd
+      # shell redirection is also racy, so make a temporary file first
+      transport << "tmpconf=$(mktemp #{TasteTester::Config.chef_config_path}/" +
+        "#{TASTE_TESTER_CONFIG}.TMPXXXXXX)"
+      transport << "/bin/echo -n \"#{serialized_config}\" | base64 --decode" +
+        ' > "${tmpconf}"'
+      # then rename it to replace any existing file
+      transport << 'mv -f "${tmpconf}" ' +
+        "#{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}"
+      transport << "( ln -vsf #{TasteTester::Config.chef_config_path}" +
+        "/#{TASTE_TESTER_CONFIG} #{TasteTester::Config.chef_config_path}/" +
+        "#{TasteTester::Config.chef_config}; true )"
+    end
+
+    # Remote testing commands for Windows
+    def add_windows_test_cmds(transport, serialized_config)
+      # This is the closest equivalent to 'bash -x' - but if we put it on
+      # by default the way we do with linux it badly breaks our output. So only
+      # set it if we're in debug
+      #
+      # This isn't the most optimal place for this. It should be in ssh_util
+      # and we should jam this into the beggining of the cmds list we get,
+      # but this is early enough and good enough for now and we can think about
+      # that when we refactor tunnel.sh, ssh.sh and ssh_util.sh into one sane
+      # class.
+      if logger.level == Logger::DEBUG
+        transport << 'Set-PSDebug -trace 1'
+      end
+
+      ttconfig =
+        "#{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}"
+      realconfig = "#{TasteTester::Config.chef_config_path}/" +
+        TasteTester::Config.chef_config
+      [
+        create_eventlog_if_needed_cmd,
+        'Write-EventLog -LogName "Application" -Source "taste-tester" ' +
+          '-EventID 1 -EntryType Information ' +
+          "-Message \"Moving server into taste-tester for #{@user}\"",
+        touchcmd,
+        "$b64 = \"#{serialized_config}\"",
+        "$ttconfig = \"#{ttconfig}\"",
+        "$realconfig = \"#{realconfig}\"",
+
+        '$tmp64 = (New-TemporaryFile).name',
+        '$tmp = (New-TemporaryFile).name',
+
+        '$b64 | Out-File -Encoding ASCII $tmp64 -Force',
+
+        # Remove our tmp file before we write to it or certutil crashes...
+        'if (Test-Path $tmp) { rm $tmp }',
+        'certutil -decode $tmp64 $tmp',
+        'mv $tmp $ttconfig -Force',
+
+        'New-Item -ItemType SymbolicLink -Value $ttconfig $realconfig -Force',
+      ].each do |cmd|
+        transport << cmd
+      end
+    end
+
     def touchcmd
-      touch = Base64.encode64(
-        "if [ 'Darwin' = $(uname) ]; then touch -t \"$(date -r " +
-        "#{TasteTester::Config.testing_end_time.to_i} +'%Y%m%d%H%M.%S')\" " +
-        "#{TasteTester::Config.timestamp_file}; else touch --date \"$(date " +
-        "-d @#{TasteTester::Config.testing_end_time.to_i} +'%Y-%m-%d %T')\" " +
-        "#{TasteTester::Config.timestamp_file}; fi",
-      ).delete("\n")
-      "/bin/echo -n '#{touch}' | base64 --decode | bash"
+      if TasteTester::Config.windows_target
+        # There's no good touch equivalent in Windows. You can force
+        # creation of a new file, but that'll nuke it's contents, which if we're
+        # 'keeptesting'ing, then we'll loose the contents (PID and such).
+        # We can set the timestamp with Get-Item.creationtime, but it must exist
+        # if we're not gonna crash. So do both.
+        [
+          "$ts = \"#{TasteTester::Config.timestamp_file}\"",
+          'if (-Not (Test-Path $ts)) { New-Item -ItemType file $ts }',
+          '(Get-Item "$ts").LastWriteTime=("' +
+            "#{TasteTester::Config.testing_end_time}\")",
+        ].join(';')
+      else
+        touch = Base64.encode64(
+          "if [ 'Darwin' = $(uname) ]; then touch -t \"$(date -r " +
+          "#{TasteTester::Config.testing_end_time.to_i} +'%Y%m%d%H%M.%S')\" " +
+          "#{TasteTester::Config.timestamp_file}; else touch --date \"$(date " +
+          "-d @#{TasteTester::Config.testing_end_time.to_i} +'%Y-%m-%d %T')\"" +
+          " #{TasteTester::Config.timestamp_file}; fi",
+        ).delete("\n")
+        "/bin/echo -n '#{touch}' | base64 --decode | bash"
+      end
+    end
+
+    # Remote untesting commands for Windows
+    def add_windows_untest_cmds(transport)
+      config_prod = TasteTester::Config.chef_config.split('.').join('-prod.')
+      [
+        'New-Item -ItemType SymbolicLink -Force -Value ' +
+          "#{TasteTester::Config.chef_config_path}/#{config_prod} " +
+          "#{TasteTester::Config.chef_config_path}/" +
+          TasteTester::Config.chef_config,
+        'New-Item -ItemType SymbolicLink -Force -Value ' +
+          "#{TasteTester::Config.chef_config_path}/client-prod.pem " +
+          "#{TasteTester::Config.chef_config_path}/client.pem",
+        'rm -Force ' +
+          "#{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}",
+        "rm -Force #{TasteTester::Config.timestamp_file}",
+        create_eventlog_if_needed_cmd,
+        'Write-EventLog -LogName "Application" -Source "taste-tester" ' +
+          '-EventID 4 -EntryType Information -Message "Returning server ' +
+          'to production"',
+      ].each do |cmd|
+        transport << cmd
+      end
+    end
+
+    # Remote untesting commands for most OSes...
+    def add_sane_os_untest_cmds(transport)
+      config_prod = TasteTester::Config.chef_config.split('.').join('-prod.')
+      [
+        "ln -vsf #{TasteTester::Config.chef_config_path}/#{config_prod} " +
+          "#{TasteTester::Config.chef_config_path}/" +
+          TasteTester::Config.chef_config,
+        "ln -vsf #{TasteTester::Config.chef_config_path}/client-prod.pem " +
+          "#{TasteTester::Config.chef_config_path}/client.pem",
+        "rm -vf #{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}",
+        "rm -vf #{TasteTester::Config.timestamp_file}",
+        'logger -t taste-tester Returning server to production',
+      ].each do |cmd|
+        transport << cmd
+      end
     end
 
     def config
@@ -295,7 +419,7 @@ module TasteTester
           chef_repo_path taste_tester_dest
         ENDOFSCRIPT
       end
-      return ttconfig
+      ttconfig
     end
   end
 end
