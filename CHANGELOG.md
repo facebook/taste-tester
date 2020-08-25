@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.19
+* Fix broken `test` mode on Windows
+* Many powershell cleanups
+* Actually break the tunnel loop when ready
+* Handle removes of non-existent files in powershell better
+
 ## 0.0.18
 * Fix broken `test` mode on Linux
 
