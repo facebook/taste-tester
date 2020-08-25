@@ -172,8 +172,9 @@ module TasteTester
             }
           }" #{config_file}
         ENDOFSHELLCODE
+        shellcode.chomp!
       end
-      shellcode.chomp
+      shellcode
     end
 
     def keeptesting
@@ -253,7 +254,7 @@ module TasteTester
         '$b64 | Out-File -Encoding ASCII $tmp64 -Force',
 
         # Remove our tmp file before we write to it or certutil crashes...
-        'if (Test-Path $tmp) { rm $tmp }',
+        "#{win_rm_f} $tmp",
         'certutil -decode $tmp64 $tmp',
         'mv $tmp $ttconfig -Force',
 
@@ -291,17 +292,20 @@ module TasteTester
     # Remote untesting commands for Windows
     def add_windows_untest_cmds(transport)
       config_prod = TasteTester::Config.chef_config.split('.').join('-prod.')
+      tt_config =
+        "#{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}"
+      pem_file = "#{TasteTester::Config.chef_config_path}/client-prod.pem"
+      pem_link = "#{TasteTester::Config.chef_config_path}/client.pem"
+
       [
         'New-Item -ItemType SymbolicLink -Force -Value ' +
           "#{TasteTester::Config.chef_config_path}/#{config_prod} " +
           "#{TasteTester::Config.chef_config_path}/" +
           TasteTester::Config.chef_config,
         'New-Item -ItemType SymbolicLink -Force -Value ' +
-          "#{TasteTester::Config.chef_config_path}/client-prod.pem " +
-          "#{TasteTester::Config.chef_config_path}/client.pem",
-        'rm -Force ' +
-          "#{TasteTester::Config.chef_config_path}/#{TASTE_TESTER_CONFIG}",
-        "rm -Force #{TasteTester::Config.timestamp_file}",
+          "#{pem_file} #{pem_link}",
+        "#{win_rm_f} #{tt_config}",
+        "#{win_rm_f} #{TasteTester::Config.timestamp_file}",
         create_eventlog_if_needed_cmd,
         'Write-EventLog -LogName "Application" -Source "taste-tester" ' +
           '-EventID 4 -EntryType Information -Message "Returning server ' +
@@ -326,6 +330,10 @@ module TasteTester
       ].each do |cmd|
         transport << cmd
       end
+    end
+
+    def win_rm_f
+      'Remove-Item -Force -ErrorAction SilentlyContinue'
     end
 
     def config
