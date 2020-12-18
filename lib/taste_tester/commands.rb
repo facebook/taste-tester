@@ -102,13 +102,23 @@ module TasteTester
         TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
       end
       tested_hosts = []
+
+      host_threads = {}
+      connect_failures = 0
       hosts.each do |hostname|
         host = TasteTester::Host.new(hostname, server)
+        host_threads[hostname] = Thread.new{ host.test }
+        host_threads[hostname].report_on_exception = false
+      end
+      host_threads.each do |hostname, host_thread|
         begin
-          host.test
+          host_thread.join
           tested_hosts << hostname
         rescue TasteTester::Exceptions::AlreadyTestingError => e
           logger.error("User #{e.username} is already testing on #{hostname}")
+        rescue TasteTester::Exceptions::SshError
+          logger.error("Cannot connect to #{hostname}")
+          connect_failures += 1
         end
       end
       unless TasteTester::Config.skip_post_test_hook ||
@@ -116,15 +126,16 @@ module TasteTester
         TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
                                      tested_hosts)
       end
-      # Strictly: hosts and tested_hosts should be sets to eliminate variance in
-      # order or duplicates. The exact comparison works here because we're
-      # building tested_hosts from hosts directly.
-      if tested_hosts == hosts
+      if tested_hosts.to_set == hosts.to_set
         # No exceptions, complete success: every host listed is now configured
         # to use our chef-zero instance.
         exit(0)
       end
       if tested_hosts.empty?
+        if connect_failures > 0
+          # All the hosts we had failed
+          exit(1)
+        end
         # All requested hosts are being tested by another user. We didn't change
         # their configuration.
         exit(3)
