@@ -64,6 +64,7 @@ module TasteTester
     json false
     jumps nil
     windows_target false
+    servers []
 
     # Start/End refs for calculating changes in the repo.
     #  - start_ref should be the "master" commit of the repository
