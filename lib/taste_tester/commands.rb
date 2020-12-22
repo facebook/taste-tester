@@ -103,19 +103,23 @@ module TasteTester
       end
       tested_hosts = []
       host_threads = []
-      connect_failures = 0
-      hosts.each do |hostname|
-        # Poor man thread pool manager: keeping it simple
-        nb_threads_over_max = host_threads.length - TasteTester::Config.parallel_hosts
-        if nb_threads_over_max >= 0
-          host_threads[nb_threads_over_max].join
-        end
+      queue = Queue.new
+      hosts.each { |hostname| queue << hostname }
+      [TasteTester::Config.parallel_hosts, hosts.length].min.times do
         host_threads << Thread.new do
-          Thread.current[:hostname] = hostname
           Thread.current.report_on_exception = false
-          TasteTester::Host.new(hostname, server).test
+          loop do
+            begin
+              hostname = queue.pop(true)
+              Thread.current[:hostname] = hostname
+              TasteTester::Host.new(hostname, server).test
+            rescue ThreadError
+              break
+            end
+          end
         end
       end
+      connect_failures = 0
       host_threads.each do |host_thread|
         begin
           hostname = host_thread[:hostname]
