@@ -64,8 +64,7 @@ module TasteTester
     end
 
     def self.test
-      hosts = TasteTester::Config.servers
-      unless hosts
+      unless TasteTester::Config.servers
         logger.warn('You must provide a hostname')
         exit(1)
       end
@@ -82,7 +81,6 @@ module TasteTester
         end
         upload
       end
-      server = TasteTester::Server.new
       unless TasteTester::Config.linkonly
         if TasteTester::Config.no_repo
           repo = nil
@@ -101,7 +99,40 @@ module TasteTester
           TasteTester::Config.linkonly
         TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
       end
-      tested_hosts = []
+      hosts = _run_on_hosts(:test)
+      unless TasteTester::Config.skip_post_test_hook ||
+          TasteTester::Config.linkonly
+        TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
+                                     hosts.select { |h, r| r === :ok }.keys)
+      end
+      if hosts.values.all? :ok
+        # No exceptions, complete success: every host listed is now configured
+        # to use our chef-zero instance.
+        exit(0)
+      end
+      if hosts.values.none? :ok
+        if hosts.values.any? :ssh_error
+          # All the hosts we had failed, with at least one because of ssh
+          exit(1)
+        end
+        # All requested hosts are being tested by another user. We didn't change
+        # their configuration.
+        exit(3)
+      end
+      # Otherwise, we got a mix of success and failure due to being tested by
+      # another user. We'll be pessimistic and return an error because the
+      # intent to taste test the complete list was not successful.
+      exit(2)
+    end
+
+    def self._run_on_hosts(method)
+      hosts = TasteTester::Config.servers
+      unless hosts
+        logger.error('You must provide a hostname')
+        exit(1)
+      end
+      server = TasteTester::Server.new
+      hosts_result = {}
       host_threads = []
       queue = Queue.new
       hosts.each { |hostname| queue << hostname }
@@ -112,7 +143,7 @@ module TasteTester
             begin
               hostname = queue.pop(true)
               Thread.current[:hostname] = hostname
-              TasteTester::Host.new(hostname, server).test
+              TasteTester::Host.new(hostname, server).send method
             rescue ThreadError
               break
             end
@@ -121,80 +152,33 @@ module TasteTester
       end
       connect_failures = 0
       host_threads.each do |host_thread|
+        result = :unknown_error
         begin
           hostname = host_thread[:hostname]
           host_thread.join
-          tested_hosts << hostname
+          result = :ok
         rescue TasteTester::Exceptions::AlreadyTestingError => e
           logger.error("User #{e.username} is already testing on #{hostname}")
+          result = :already_in_testing
         rescue TasteTester::Exceptions::SshError
           logger.error("Cannot connect to #{hostname}")
-          connect_failures += 1
+          result = :ssh_error
         end
+        hosts_result[hostname] = result
       end
-      unless TasteTester::Config.skip_post_test_hook ||
-          TasteTester::Config.linkonly
-        TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
-                                     tested_hosts)
-      end
-      if tested_hosts.to_set == hosts.to_set
-        # No exceptions, complete success: every host listed is now configured
-        # to use our chef-zero instance.
-        exit(0)
-      end
-      if tested_hosts.empty?
-        if connect_failures > 0
-          # All the hosts we had failed, with at least one because of ssh
-          exit(1)
-        end
-        # All requested hosts are being tested by another user. We didn't change
-        # their configuration.
-        exit(3)
-      end
-      # Otherwise, we got a mix of success and failure due to being tested by
-      # another user. We'll be pessemistic and return an error because the
-      # intent to taste test the complete list was not successful.
-      # code.
-      exit(2)
+      hosts_result
     end
 
     def self.untest
-      hosts = TasteTester::Config.servers
-      unless hosts
-        logger.error('You must provide a hostname')
-        exit(1)
-      end
-      server = TasteTester::Server.new
-      hosts.each do |hostname|
-        host = TasteTester::Host.new(hostname, server)
-        host.untest
-      end
+      _run_on_hosts(:untest)
     end
 
     def self.runchef
-      hosts = TasteTester::Config.servers
-      unless hosts
-        logger.warn('You must provide a hostname')
-        exit(1)
-      end
-      server = TasteTester::Server.new
-      hosts.each do |hostname|
-        host = TasteTester::Host.new(hostname, server)
-        host.runchef
-      end
+      _run_on_hosts(:runchef)
     end
 
     def self.keeptesting
-      hosts = TasteTester::Config.servers
-      unless hosts
-        logger.warn('You must provide a hostname')
-        exit(1)
-      end
-      server = TasteTester::Server.new
-      hosts.each do |hostname|
-        host = TasteTester::Host.new(hostname, server)
-        host.keeptesting
-      end
+      _run_on_hosts(:keeptesting)
     end
 
     def self.upload
