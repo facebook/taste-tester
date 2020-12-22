@@ -419,7 +419,6 @@ MODES:
       end
       options[:parallel_hosts] = n.to_i
     end
-
   end
 
   if mode == 'help'
