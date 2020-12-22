@@ -323,10 +323,15 @@ MODES:
     end
 
     opts.on(
-      '-s', '--servers SERVER[,SERVER]', Array,
-      'Server to test/untest/keeptesting.'
-    ) do |s|
-      options[:servers] = s
+      '-s', '--split', 'Split server list on commas.'
+    ) do
+      options[:split] = true
+    end
+
+    opts.on(
+      '--servers', 'DEPRECATED: Alias for --split for backward compatibility.'
+    ) do
+      options[:split] = true
     end
 
     opts.on(
@@ -419,6 +424,20 @@ MODES:
 
   parser.parse!
 
+  if ARGV
+    if [:test, :untest, :runchef, :keeptesting].include?(mode.to_sym)
+      if options[:split]
+        options[:servers] = ARGV.map { |s| s.split(/,/) }.flatten
+      else
+        options[:servers] = ARGV
+      end
+    end
+  else
+    puts "Mode #{mode} does not accept extra arguments: #{ARGV}\n\n"
+    puts parser
+    exit(1)
+  end
+
   if File.exist?(File.expand_path(options[:config_file]))
     TasteTester::Config.from_file(File.expand_path(options[:config_file]))
   end
@@ -433,10 +452,6 @@ MODES:
       exit(1)
     end
     TasteTester::Hooks.get(path)
-  end
-
-  if ARGV && [:test, :untest].include?(mode.to_sym)
-    TasteTester::Config.servers.concat ARGV
   end
 
   begin
