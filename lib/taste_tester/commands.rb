@@ -97,13 +97,14 @@ module TasteTester
       end
       unless TasteTester::Config.skip_pre_test_hook ||
           TasteTester::Config.linkonly
-        TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
+        TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo,
+                                    TasteTester::Config.servers)
       end
       hosts = _run_on_hosts(:test)
       unless TasteTester::Config.skip_post_test_hook ||
           TasteTester::Config.linkonly
         TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
-                                     hosts.select { |h, r| r === :ok }.keys)
+                                     hosts.select { |_, r| r == :ok }.keys)
       end
       if hosts.values.all? :ok
         # No exceptions, complete success: every host listed is now configured
@@ -150,7 +151,6 @@ module TasteTester
           end
         end
       end
-      connect_failures = 0
       host_threads.each do |host_thread|
         result = :unknown_error
         begin
