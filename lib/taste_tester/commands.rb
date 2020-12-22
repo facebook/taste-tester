@@ -102,16 +102,23 @@ module TasteTester
         TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
       end
       tested_hosts = []
-
-      host_threads = {}
+      host_threads = []
       connect_failures = 0
       hosts.each do |hostname|
-        host = TasteTester::Host.new(hostname, server)
-        host_threads[hostname] = Thread.new{ host.test }
-        host_threads[hostname].report_on_exception = false
+        # Poor man thread pool manager: keeping it simple
+        nb_threads_over_max = host_threads.length - TasteTester::Config.parallel_hosts
+        if nb_threads_over_max >= 0
+          host_threads[nb_threads_over_max].join
+        end
+        host_threads << Thread.new do
+          Thread.current[:hostname] = hostname
+          Thread.current.report_on_exception = false
+          TasteTester::Host.new(hostname, server).test
+        end
       end
-      host_threads.each do |hostname, host_thread|
+      host_threads.each do |host_thread|
         begin
+          hostname = host_thread[:hostname]
           host_thread.join
           tested_hosts << hostname
         rescue TasteTester::Exceptions::AlreadyTestingError => e
@@ -133,7 +140,7 @@ module TasteTester
       end
       if tested_hosts.empty?
         if connect_failures > 0
-          # All the hosts we had failed
+          # All the hosts we had failed, with at least one because of ssh
           exit(1)
         end
         # All requested hosts are being tested by another user. We didn't change
