@@ -48,7 +48,7 @@ module TasteTester
   end
 
   cmd = TasteTester::Config.chef_client_command
-  cmd_28 = format('%-28s', "#{cmd}")
+  the_command_shorten_to_28 = format('%-28s', cmd)
   description = <<-ENDOFDESCRIPTION
 Welcome to taste-tester!
 
@@ -58,11 +58,11 @@ TLDR; Most common usage is:
   vi cookbooks/...              # Make your changes and commit locally
   taste-tester test -s [host]   # Put host in test mode
   ssh root@[host]               # Log on host
-  #{cmd_28                   }  # Run chef and watch it break
+  #{the_command_shorten_to_28}  # Run chef and watch it break
   vi cookbooks/...              # Fix your cookbooks
   taste-tester upload           # Upload the diff
   ssh root@[host]               # Log on host
-  #{cmd_28                   }  # Run chef and watch it succeed
+  #{the_command_shorten_to_28}  # Run chef and watch it succeed
   <#{verify}>
   taste-tester untest -s [host] # Put host back in production
                                 #   (optional - will revert itself after 1 hour)
