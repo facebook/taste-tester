@@ -56,7 +56,7 @@ Usage: taste-tester <mode> [<options>] [optional servers to test/untest]
 
 TLDR; Most common usage is:
   vi cookbooks/...              # Make your changes and commit locally
-  taste-tester test -s [host]   # Put host in test mode
+  taste-tester test [host]      # Put host in test mode
   ssh root@[host]               # Log on host
   #{the_command_shorten_to_28}  # Run chef and watch it break
   vi cookbooks/...              # Fix your cookbooks
@@ -64,7 +64,7 @@ TLDR; Most common usage is:
   ssh root@[host]               # Log on host
   #{the_command_shorten_to_28}  # Run chef and watch it succeed
   <#{verify}>
-  taste-tester untest -s [host] # Put host back in production
+  taste-tester untest [host]    # Put host back in production
                                 #   (optional - will revert itself after 1 hour)
 
 And you're done!
@@ -73,9 +73,9 @@ Note: There may be site specific testing instructions, see local documentation f
 MODES:
   test
     Sync your local repo to your virtual Chef server (same as 'upload'), and
-    point some production server(s) specified by -s (or as arguments) to your
-    virtual chef server for testing.  If you have you a plugin that uses the
-    hookpoint, it'll may amend your commit message to denote the server you tested.
+    point some production server(s) specified as arguments to your virtual
+    chef server for testing.  If you have you a plugin that uses the hookpoint,
+    it'll may amend your commit message to denote the server you tested.
     Returns:
       0 Success.
       1 Failure, e.g. host not reachable or usage error.
@@ -100,17 +100,17 @@ MODES:
     server of each role, potentially also on multiple platforms.
 
   keeptesting
-    Extend the testing time on server specified by -s by 1 hour unless
+    Extend the testing time on the servers passed as arguments by 1 hour unless
     otherwise specified by -t.
 
   untest
-    Return the server(s) specified (in -s or as arguments) to production.
+    Return the server(s) specified as arguments to production.
 
   status
     Print out the state of the world.
 
   run
-    Run #{cmd} on the machine specified by '-s' over SSH and print the output.
+    Run #{cmd} on the machine(s) specified as arguments over SSH and print the output.
     NOTE!! This is #{'NOT'.red} a sufficient test, you must log onto the remote
     machine and verify the changes you are trying to make are actually present.
 
@@ -323,16 +323,8 @@ MODES:
     end
 
     opts.on(
-      '-s', '--split', 'Split server list on commas.'
-    ) do
-      options[:split] = true
-    end
-
-    opts.on(
-      '--servers', 'DEPRECATED: Alias for --split for backward compatibility.'
-    ) do
-      options[:split] = true
-    end
+      '-s', '--servers', 'DEPRECATED: ignored for backward compatibility.'
+    )
 
     opts.on(
       '--user USER', 'Custom username for SSH, defaults to "root".' +
@@ -426,16 +418,12 @@ MODES:
 
   if ARGV
     if [:test, :untest, :runchef, :keeptesting].include?(mode.to_sym)
-      if options[:split]
-        options[:servers] = ARGV.map { |s| s.split(/,/) }.flatten
-      else
-        options[:servers] = ARGV
-      end
+      options[:servers] = ARGV.map { |s| s.split(/,/) }.flatten
+    else
+      puts "Mode #{mode} does not accept extra arguments: #{ARGV}\n\n"
+      puts parser
+      exit(1)
     end
-  else
-    puts "Mode #{mode} does not accept extra arguments: #{ARGV}\n\n"
-    puts parser
-    exit(1)
   end
 
   if File.exist?(File.expand_path(options[:config_file]))
