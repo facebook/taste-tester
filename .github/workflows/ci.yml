@@ -25,18 +25,6 @@ jobs:
       run: bundle exec rubocop --display-cop-names
     - name: Run integration tests
       run: ./test/run.sh
-# This doesn't work on PRs from forks due to GITHUB_TOKEN, which makes
-# it kinda useless for now
-# https://github.com/andrewmcodes/rubocop-linter-action/issues/68
-#  rubocop:
-#    runs-on: ubuntu-latest
-#    steps:
-#    - name: Checkout repository
-#      uses: actions/checkout@v2
-#    - name: Run Rubocop Linter
-#      uses: andrewmcodes/rubocop-linter-action@v3.2.0
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   markdown:
     runs-on: ubuntu-latest
     steps:
