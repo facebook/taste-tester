@@ -15,7 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
 set -o verbose
+bundle exec chef-zero &
+ZERO=$!
+trap "kill -9 $ZERO" EXIT
+sleep 5
 rm -rf /tmp/ops
 
 function tt {

@@ -18,6 +18,10 @@
 
 set -e
 set -o verbose
+bundle exec chef-zero &
+ZERO=$!
+trap "kill -9 $ZERO" EXIT
+sleep 5
 rm -rf /tmp/ops
 HG="hg --config ui.username=foo@bar.com"
 
