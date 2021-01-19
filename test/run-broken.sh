@@ -20,14 +20,15 @@ set -o verbose
 bundle exec chef-zero &
 ZERO=$!
 trap "kill -9 $ZERO" EXIT
+SOURCE=/tmp/ops
 sleep 5
-rm -rf /tmp/ops
+rm -rf $SOURCE
 
 function tt {
-  bundle exec ./bin/taste-tester test -s localhost -y -c $1
+  bundle exec ./bin/taste-tester test -ys localhost -c $1 -vv
 }
 (
-  mkdir /tmp/ops
+  mkdir $SOURCE
 )
 tt ./test/tt-auto.rb
 if [ $? -ne 0 ]; then

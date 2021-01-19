@@ -21,16 +21,17 @@ set -o verbose
 bundle exec chef-zero &
 ZERO=$!
 trap "kill -9 $ZERO" EXIT
+SOURCE=/tmp/ops
 sleep 5
-rm -rf /tmp/ops
+rm -rf $SOURCE
 HG="hg --config ui.username=foo@bar.com"
 
 function tt {
-  bundle exec ./bin/taste-tester test -s localhost -y -c $1 -v
+  bundle exec ./bin/taste-tester test -ys localhost -c $1 -vv
 }
 (
-  mkdir /tmp/ops
-  cd /tmp/ops
+  mkdir $SOURCE
+  cd $SOURCE
   hg init
   mkdir chef/cookbooks/cookbook1/recipes -p
   touch chef/cookbooks/cookbook1/recipes/default.rb

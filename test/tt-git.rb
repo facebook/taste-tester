@@ -19,3 +19,4 @@ repo '/tmp/ops'
 repo_type 'git'
 timestamp_file '/tmp/test_timestamp'
 chef_config_path '/tmp'
+use_ssh_tunnels false
