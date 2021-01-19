@@ -23,6 +23,8 @@ jobs:
       run: bundle exec rspec
     - name: Run rubocop
       run: bundle exec rubocop --display-cop-names
+    - name: Run integration tests
+      run: ./test/run.sh
 # This doesn't work on PRs from forks due to GITHUB_TOKEN, which makes
 # it kinda useless for now
 # https://github.com/andrewmcodes/rubocop-linter-action/issues/68
