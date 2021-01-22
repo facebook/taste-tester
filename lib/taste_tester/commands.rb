@@ -106,13 +106,13 @@ module TasteTester
         TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
                                      hosts.select { |_, r| r == :ok }.keys)
       end
-      if hosts.values.all? :ok
+      if hosts.values.all?(:ok)
         # No exceptions, complete success: every host listed is now configured
         # to use our chef-zero instance.
         exit(0)
       end
-      if hosts.values.none? :ok
-        if hosts.values.any? :ssh_error
+      if hosts.values.none?(:ok)
+        if hosts.values.any?(:ssh_error)
           # All the hosts we had failed, with at least one because of ssh
           exit(1)
         end
@@ -143,6 +143,7 @@ module TasteTester
           loop do
             begin
               hostname = queue.pop(true)
+              next unless hostname
               Thread.current[:hostname] = hostname
               TasteTester::Host.new(hostname, server).send method
             rescue ThreadError
