@@ -142,8 +142,8 @@ module TasteTester
           Thread.current.report_on_exception = false
           loop do
             begin
+              # non_block: true makes pop() throw a ThreadError when empty
               hostname = queue.pop(true)
-              next unless hostname
               Thread.current[:hostname] = hostname
               TasteTester::Host.new(hostname, server).send method
             rescue ThreadError
