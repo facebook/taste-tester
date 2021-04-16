@@ -20,8 +20,11 @@ module TasteTester
           "-J #{TasteTester::Config.jumps}" : ''
         "#{TasteTester::Config.ssh_command} #{jumps} -T -o BatchMode=yes " +
           '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
-          "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
-          "#{TasteTester::Config.user}@#{@host} "
+          "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout}"
+      end
+
+      def ssh_target
+        "#{TasteTester::Config.user}@#{@host}"
       end
 
       def error!
@@ -30,7 +33,7 @@ module TasteTester
   The host might be broken or your SSH access is not working properly
   Try doing
 
-      #{ssh_base_cmd} -v
+      #{ssh_base_cmd} -v #{ssh_target}
 
   to see if ssh connection is good.
   If ssh works, add '-v' key to taste-tester to see the list of commands it's
@@ -66,7 +69,7 @@ module TasteTester
         else
           cmds = command_list.join(' && ')
         end
-        cmd = ssh
+        cmd = "#{ssh} #{ssh_target}"
         cc = Base64.encode64(cmds).delete("\n")
         if TasteTester::Config.windows_target
 
