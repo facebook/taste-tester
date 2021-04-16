@@ -69,7 +69,7 @@ module TasteTester
         else
           cmds = command_list.join(' && ')
         end
-        cmd = "#{ssh} #{ssh_target}"
+        cmd = "#{ssh} #{ssh_target} "
         cc = Base64.encode64(cmds).delete("\n")
         if TasteTester::Config.windows_target
 
