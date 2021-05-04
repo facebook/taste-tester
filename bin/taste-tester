@@ -426,7 +426,7 @@ MODES:
 
   parser.parse!
 
-  unless ARGV.empty?
+  if ARGV
     if [:test, :untest, :runchef, :keeptesting].include?(mode.to_sym)
       options[:servers] = ARGV.map { |s| s.split(/,/) }.flatten
     else
