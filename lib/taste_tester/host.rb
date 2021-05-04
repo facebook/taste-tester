@@ -365,7 +365,7 @@ module TasteTester
           FileUtils.rmtree(taste_tester_dest)
           FileUtils.mkpath(taste_tester_dest)
           FileUtils.touch(File.join(taste_tester_dest, 'chefignore'))
-          uri = URI('#{url}/file_store/tt.tgz')
+          uri = URI.parse('#{url}/file_store/tt.tgz')
           Net::HTTP.start(
             uri.host,
             uri.port,
