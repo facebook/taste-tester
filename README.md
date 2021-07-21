@@ -179,6 +179,12 @@ Custom output of calculated impact, useful if defining either of the other
 impact hooks. Must return a truthy value to prevent the default output from
 printing.
 
+* self.post_error(dryrun, exception, mode, hostname)
+
+A hook which will be called just before taste-tester throws an exception/exits.
+Passes down the `exception` object and the `mode` taste-tester was invoked with
+for further analysis and doing any additional logging, output, or cleanup.
+
 ## Plugin example
 
 This is an example `/etc/taste-tester-plugin.rb` to add a user-defined string
