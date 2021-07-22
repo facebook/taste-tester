@@ -63,6 +63,11 @@ module TasteTester
     # If this method returns true, the default output will not be printed.
     def self.print_impact(_final_impact); end
 
+    # In the event of any failure, this hook will be called
+    # just before taste-tester throws an exception/exits
+    # Additional logging, output, or cleanup may be done here.
+    def self.post_error(_dryrun, _exception, _mode, _hostname); end
+
     def self.get(file)
       path = File.expand_path(file)
       logger.warn("Loading plugin at #{path}") unless TasteTester::Config.json
