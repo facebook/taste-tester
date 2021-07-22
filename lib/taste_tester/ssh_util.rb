@@ -36,6 +36,19 @@ module TasteTester
       #{ssh_base_cmd} -v #{ssh_target}
 
   to see if ssh connection is good.
+      ERRORMESSAGE
+
+        if TasteTester::Config.ssh_command_generator
+          error += <<~ERRORMESSAGE
+
+  The above command was generated, and it may be useful to run the generator directly instead:
+
+      #{TasteTester::Config.ssh_command_generator}
+      ERRORMESSAGE
+        end
+
+          error += <<~ERRORMESSAGE
+
   If ssh works, add '-v' key to taste-tester to see the list of commands it's
   trying to execute, and try to run them manually on destination host
         ERRORMESSAGE
