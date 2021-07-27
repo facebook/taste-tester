@@ -56,6 +56,19 @@ describe TasteTester::SSH do
         "\"echo 'Y21kMSAmJiBjbWQy' | base64 --decode | bash -x\"",
       )
     end
+
+    it 'test ssh exception message' do
+      expect(
+        TasteTester::Logging.logger,
+      ).to receive(
+        :error,
+      ).with(
+        /ssh.*root@mock_host/,
+      )
+      expect { tt_ssh.error! }.to raise_error(
+        TasteTester::Exceptions::SshError,
+      )
+    end
   end
 
   context 'test custom configs linux' do
@@ -88,6 +101,19 @@ describe TasteTester::SSH do
       expect(tt_ssh.build_ssh_cmd('mock_ssh', ['cmd1', 'cmd2'])).to eq(
         'mock_ssh rossi@mock_host ' +
         "\"echo 'Y21kMSAmJiBjbWQy' | base64 --decode | sudo bash -x\"",
+      )
+    end
+
+    it 'test ssh exception message' do
+      expect(
+        TasteTester::Logging.logger,
+      ).to receive(
+        :error,
+      ).with(
+        /mock_ssh_command.*mock_jump_user@mock_jump_host.*rossi@mock_host/,
+      )
+      expect { tt_ssh.error! }.to raise_error(
+        TasteTester::Exceptions::SshError,
       )
     end
   end
