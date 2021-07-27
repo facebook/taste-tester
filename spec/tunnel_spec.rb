@@ -29,6 +29,14 @@ describe TasteTester::Tunnel do
     Logger.new('/dev/null')
   end
 
+  let(:config_hash) do
+    TasteTester::Config.save(true)
+  end
+
+  before do
+    TasteTester::Config.restore(config_hash)
+  end
+
   before do
     allow_any_instance_of(
       TasteTester::Server,
@@ -62,6 +70,9 @@ describe TasteTester::Tunnel do
         '| base64 --decode | bash -x',
       )
     end
+    after do
+      TasteTester::Config.restore(config_hash)
+    end
   end
 
   context 'test custom configs linux' do
@@ -91,10 +102,17 @@ describe TasteTester::Tunnel do
         '| base64 --decode | sudo bash -x',
       )
     end
+    after do
+      TasteTester::Config.restore(config_hash)
+    end
   end
 
   context 'test custom configs windows' do
     before do
+      TasteTester::Config.ssh_connect_timeout 10
+      TasteTester::Config.jumps 'mock_jump_user@mock_jump_host'
+      TasteTester::Config.ssh_command 'mock_ssh_command'
+      TasteTester::Config.user 'rossi'
       TasteTester::Config.windows_target true
     end
     it 'test build tunnel command' do
@@ -115,6 +133,9 @@ describe TasteTester::Tunnel do
       expect(tt_tunnel.cmd).to include(
         'powershell.exe -c -; exit $LASTEXITCODE',
       )
+    end
+    after do
+      TasteTester::Config.restore(config_hash)
     end
   end
 end
