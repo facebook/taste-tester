@@ -28,10 +28,17 @@ describe TasteTester::SSH do
     Logger.new('/dev/null')
   end
 
+  let(:config_hash) do
+    TasteTester::Config.save(true)
+  end
+
   let(:tt_ssh) do
     TasteTester::SSH.new('mock_host')
   end
 
+  before do
+    TasteTester::Config.restore(config_hash)
+  end
   context 'test default config' do
     it 'test ssh base command' do
       expect(tt_ssh.ssh_base_cmd).to eq(
@@ -68,6 +75,9 @@ describe TasteTester::SSH do
       expect { tt_ssh.error! }.to raise_error(
         TasteTester::Exceptions::SshError,
       )
+    end
+    after do
+      TasteTester::Config.restore(config_hash)
     end
   end
 
@@ -116,10 +126,14 @@ describe TasteTester::SSH do
         TasteTester::Exceptions::SshError,
       )
     end
+    after do
+      TasteTester::Config.restore(config_hash)
+    end
   end
 
   context 'test custom configs windows' do
     before do
+      TasteTester::Config.user 'rossi'
       TasteTester::Config.windows_target true
     end
     it 'test build ssh command' do
@@ -129,6 +143,9 @@ describe TasteTester::SSH do
         "FromBase64String('\"'Y21kMSA7IGNtZDI='))\"' " +
         "| powershell.exe -c -; exit $LASTEXITCODE'",
       )
+    end
+    after do
+      TasteTester::Config.restore(config_hash)
     end
   end
 end
