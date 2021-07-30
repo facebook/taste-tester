@@ -15,12 +15,45 @@
 module TasteTester
   class SSH
     module Util
-      def ssh_base_cmd
-        jumps = TasteTester::Config.jumps ?
-          "-J #{TasteTester::Config.jumps}" : ''
+      def jumps
+        TasteTester::Config.jumps ? "-J #{TasteTester::Config.jumps}" : ''
+      end
+
+      def ssh_cmd_generator
+        if TasteTester::Config.ssh_cmd_template
+          base_gen_args = {
+            :user => TasteTester::Config.user,
+            :jumps => jumps,
+            :host => @host,
+          }
+          TasteTester::Config.ssh_cmd_template %
+            base_gen_args.update(TasteTester::Config.ssh_gen_args)
+        end
+      end
+
+      def ssh_gen_cmd
+        if TasteTester::Config.ssh_cmd_template
+          # we store this generated command inside a class variable
+          # so that we can directly refer to this while printing
+          # logs and error messages
+          @ssh_gen_cmd =
+            Mixlib::ShellOut.new(ssh_cmd_generator).run_command.stdout.chomp
+          @ssh_gen_cmd
+        end
+      end
+
+      def ssh_vanilla_cmd
         "#{TasteTester::Config.ssh_command} #{jumps} -T -o BatchMode=yes " +
           '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
           "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout}"
+      end
+
+      def ssh_base_cmd
+        if TasteTester::Config.ssh_cmd_template
+          ssh_gen_cmd
+        else
+          ssh_vanilla_cmd
+        end
       end
 
       def ssh_target
@@ -28,14 +61,31 @@ module TasteTester
       end
 
       def error!
+        if TasteTester::Config.ssh_cmd_template
+          ssh_cmd = "#{@ssh_gen_cmd} -v"
+        else
+          ssh_cmd = "#{ssh_base_cmd} -v #{ssh_target}"
+        end
         error = <<~ERRORMESSAGE
-  SSH returned error while connecting to #{TasteTester::Config.user}@#{@host}
+  SSH returned error while connecting to #{ssh_target}
   The host might be broken or your SSH access is not working properly
-  Try doing
+  Try running the following command to see if ssh is good:
 
-      #{ssh_base_cmd} -v #{ssh_target}
+      #{ssh_cmd}
 
-  to see if ssh connection is good.
+      ERRORMESSAGE
+
+        if TasteTester::Config.ssh_cmd_template
+          error += <<~ERRORMESSAGE
+
+  The above command was generated, and it may be useful to run the generator directly instead:
+
+      #{ssh_cmd_generator}
+      ERRORMESSAGE
+        end
+
+        error += <<~ERRORMESSAGE
+
   If ssh works, add '-v' key to taste-tester to see the list of commands it's
   trying to execute, and try to run them manually on destination host
         ERRORMESSAGE
@@ -69,7 +119,11 @@ module TasteTester
         else
           cmds = command_list.join(' && ')
         end
-        cmd = "#{ssh} #{ssh_target} "
+        if TasteTester::Config.ssh_cmd_template
+          cmd = "#{ssh} "
+        else
+          cmd = "#{ssh} #{ssh_target} "
+        end
         cc = Base64.encode64(cmds).delete("\n")
         if TasteTester::Config.windows_target
 
