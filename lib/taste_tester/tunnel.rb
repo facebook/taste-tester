@@ -29,11 +29,14 @@ module TasteTester
 
     def initialize(host, server)
       @host = host
+      @port = TasteTester::Config.tunnel_port
       @server = server
+      @extra_options = '-o ServerAliveInterval=10 ' +
+        '-o ServerAliveCountMax=6 ' +
+        "-f -R #{@port}:localhost:#{@server.port} "
     end
 
     def run
-      @port = TasteTester::Config.tunnel_port
       logger.info("Setting up tunnel on port #{@port}")
       exec!(cmd, logger)
     rescue StandardError => e
@@ -54,9 +57,7 @@ module TasteTester
       # In most cases the first request from chef was "breaking" the tunnel,
       # in a way that port was still open, but subsequent requests were hanging.
       # This is reproducible and should be looked into.
-      cmd = "#{ssh_base_cmd} -o ServerAliveInterval=10 " +
-        "-o ServerAliveCountMax=6 -f -R #{@port}:localhost:#{@server.port} "
-      build_ssh_cmd(cmd, [cmds])
+      build_ssh_cmd(ssh_base_cmd, [cmds])
     end
 
     def self.kill(name)

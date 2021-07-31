@@ -61,19 +61,14 @@ describe TasteTester::SSH do
         '-o BatchMode=yes ' +
         '-o UserKnownHostsFile=/dev/null ' +
         '-o StrictHostKeyChecking=no ' +
-        '-o ConnectTimeout=5',
-      )
-    end
-
-    it 'test ssh target' do
-      expect(tt_ssh.ssh_target).to eq(
+        '-o ConnectTimeout=5 ' +
         'root@mock_host',
       )
     end
 
     it 'test build ssh command' do
-      expect(tt_ssh.build_ssh_cmd('mock_ssh', ['cmd1', 'cmd2'])).to eq(
-        'mock_ssh root@mock_host ' +
+      expect(tt_ssh.build_ssh_cmd('mock_ssh_base_cmd', ['cmd1', 'cmd2'])).to eq(
+        'mock_ssh_base_cmd ' +
         "\"echo 'Y21kMSAmJiBjbWQy' | base64 --decode | bash -x\"",
       )
     end
@@ -99,39 +94,34 @@ describe TasteTester::SSH do
     before do
       TasteTester::Config.ssh_connect_timeout 10
       TasteTester::Config.jumps 'mock_jump_user@mock_jump_host'
-      TasteTester::Config.ssh_command 'mock_ssh_command'
+      TasteTester::Config.ssh_command 'mock_ssh_cmd'
       TasteTester::Config.user 'rossi'
     end
 
     it 'test ssh base command' do
       expect(tt_ssh.ssh_base_cmd).to eq(
-        'mock_ssh_command ' +
+        'mock_ssh_cmd ' +
         '-J mock_jump_user@mock_jump_host ' +
         '-T ' +
         '-o BatchMode=yes ' +
         '-o UserKnownHostsFile=/dev/null ' +
         '-o StrictHostKeyChecking=no ' +
-        '-o ConnectTimeout=10',
-      )
-    end
-
-    it 'test ssh target' do
-      expect(tt_ssh.ssh_target).to eq(
+        '-o ConnectTimeout=10 ' +
         'rossi@mock_host',
       )
     end
 
     it 'test build ssh command' do
-      expect(tt_ssh.build_ssh_cmd('mock_ssh', ['cmd1', 'cmd2'])).to eq(
-        'mock_ssh rossi@mock_host ' +
+      expect(tt_ssh.build_ssh_cmd('mock_ssh_base_cmd', ['cmd1', 'cmd2'])).to eq(
+        'mock_ssh_base_cmd ' +
         "\"echo 'Y21kMSAmJiBjbWQy' | base64 --decode | sudo bash -x\"",
       )
     end
 
     it 'test ssh exception message' do
       regex_msg = 'SSH returned error ' +
-        "while connecting to #{tt_ssh.ssh_target}" +
-        '.*mock_ssh_command.*mock_jump_user@mock_jump_host.*rossi@mock_host'
+        'while connecting to mock_host' +
+        '.*mock_ssh_cmd.*mock_jump_user@mock_jump_host.*rossi@mock_host'
       expect(
         TasteTester::Logging.logger,
       ).to receive(
@@ -150,13 +140,12 @@ describe TasteTester::SSH do
 
   context 'test custom ssh configs linux - generated ssh command' do
     let(:mock_generated_cmd) do
-      'mock_ssh_command_bin -o option1 -o option2 mock_user@mock_host'
+      'mock_ssh_cmd_bin -o option1 -o option2 mock_user@mock_host'
     end
 
     before do
       TasteTester::Config.ssh_connect_timeout 10
       TasteTester::Config.jumps 'mock_jump_user@mock_jump_host'
-      TasteTester::Config.ssh_command 'mock_ssh_command'
       TasteTester::Config.user 'rossi'
       TasteTester::Config.ssh_cmd_template 'mock_generator_cmd ' +
         '%{arg1} %{arg2} %{jumps} %{host} --user %{user} --get-command'
@@ -181,12 +170,6 @@ describe TasteTester::SSH do
       )
     end
 
-    it 'test ssh target' do
-      expect(tt_ssh.ssh_target).to eq(
-        'rossi@mock_host',
-      )
-    end
-
     it 'test build ssh command' do
       expect(tt_ssh.build_ssh_cmd(mock_generated_cmd, ['cmd1', 'cmd2'])).to eq(
         "#{mock_generated_cmd} " +
@@ -198,7 +181,7 @@ describe TasteTester::SSH do
       allow(Mixlib::ShellOut).to receive(:new).and_return(mock_so)
       expect(tt_ssh.ssh_base_cmd).to eq(mock_generated_cmd)
       regex_msg = 'SSH returned error ' +
-        "while connecting to #{tt_ssh.ssh_target}.*#{mock_generated_cmd}" +
+        "while connecting to mock_host.*#{mock_generated_cmd}" +
         ".*The above command was generated.*#{tt_ssh.ssh_cmd_generator}"
       expect(
         TasteTester::Logging.logger,
@@ -222,8 +205,8 @@ describe TasteTester::SSH do
       TasteTester::Config.windows_target true
     end
     it 'test build ssh command' do
-      expect(tt_ssh.build_ssh_cmd('mock_ssh', ['cmd1', 'cmd2'])).to eq(
-        'mock_ssh rossi@mock_host ' +
+      expect(tt_ssh.build_ssh_cmd('mock_ssh_base_cmd', ['cmd1', 'cmd2'])).to eq(
+        'mock_ssh_base_cmd ' +
         "'[Text.Encoding]::Utf8.GetString([Convert]::" +
         "FromBase64String('\"'Y21kMSA7IGNtZDI='))\"' " +
         "| powershell.exe -c -; exit $LASTEXITCODE'",

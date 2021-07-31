@@ -37,14 +37,16 @@ module TasteTester
           # so that we can directly refer to this while printing
           # logs and error messages
           @ssh_generated_cmd ||=
-	            Mixlib::ShellOut.new(ssh_cmd_generator).run_command.stdout.chomp
+            Mixlib::ShellOut.new(ssh_cmd_generator).run_command.stdout.chomp
         end
       end
 
       def ssh_vanilla_cmd
         "#{TasteTester::Config.ssh_command} #{jumps} -T -o BatchMode=yes " +
           '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
-          "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout}"
+          "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
+          @extra_options.to_s +
+          "#{TasteTester::Config.user}@#{@host}"
       end
 
       def ssh_base_cmd
@@ -55,22 +57,13 @@ module TasteTester
         end
       end
 
-      def ssh_target
-        "#{TasteTester::Config.user}@#{@host}"
-      end
-
       def error!
-        if TasteTester::Config.ssh_cmd_template
-          ssh_cmd = "#{@ssh_generated_cmd} -v"
-        else
-          ssh_cmd = "#{ssh_base_cmd} -v #{ssh_target}"
-        end
         error = <<~ERRORMESSAGE
-  SSH returned error while connecting to #{ssh_target}
+  SSH returned error while connecting to #{@host}
   The host might be broken or your SSH access is not working properly
   Try running the following command to see if ssh is good:
 
-      #{ssh_cmd}
+      #{ssh_base_cmd} -v
 
       ERRORMESSAGE
 
@@ -118,11 +111,7 @@ module TasteTester
         else
           cmds = command_list.join(' && ')
         end
-        if TasteTester::Config.ssh_cmd_template
-          cmd = "#{ssh} "
-        else
-          cmd = "#{ssh} #{ssh_target} "
-        end
+        cmd = "#{ssh} "
         cc = Base64.encode64(cmds).delete("\n")
         if TasteTester::Config.windows_target
 
