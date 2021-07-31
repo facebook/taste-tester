@@ -31,14 +31,13 @@ module TasteTester
         end
       end
 
-      def ssh_gen_cmd
+      def ssh_generated_cmd
         if TasteTester::Config.ssh_cmd_template
           # we store this generated command inside a class variable
           # so that we can directly refer to this while printing
           # logs and error messages
-          @ssh_gen_cmd =
-            Mixlib::ShellOut.new(ssh_cmd_generator).run_command.stdout.chomp
-          @ssh_gen_cmd
+          @ssh_generated_cmd ||=
+	            Mixlib::ShellOut.new(ssh_cmd_generator).run_command.stdout.chomp
         end
       end
 
@@ -50,7 +49,7 @@ module TasteTester
 
       def ssh_base_cmd
         if TasteTester::Config.ssh_cmd_template
-          ssh_gen_cmd
+          ssh_generated_cmd
         else
           ssh_vanilla_cmd
         end
@@ -62,7 +61,7 @@ module TasteTester
 
       def error!
         if TasteTester::Config.ssh_cmd_template
-          ssh_cmd = "#{@ssh_gen_cmd} -v"
+          ssh_cmd = "#{@ssh_generated_cmd} -v"
         else
           ssh_cmd = "#{ssh_base_cmd} -v #{ssh_target}"
         end

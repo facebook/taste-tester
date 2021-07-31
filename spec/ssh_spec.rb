@@ -129,12 +129,15 @@ describe TasteTester::SSH do
     end
 
     it 'test ssh exception message' do
+      regex_msg = 'SSH returned error ' +
+        "while connecting to #{tt_ssh.ssh_target}" +
+        '.*mock_ssh_command.*mock_jump_user@mock_jump_host.*rossi@mock_host'
       expect(
         TasteTester::Logging.logger,
       ).to receive(
         :error,
       ).with(
-        /SSH returned error while connecting to #{tt_ssh.ssh_target}.*mock_ssh_command.*mock_jump_user@mock_jump_host.*rossi@mock_host/m,
+        /#{regex_msg}/m,
       )
       expect { tt_ssh.error! }.to raise_error(
         TasteTester::Exceptions::SshError,
@@ -146,7 +149,6 @@ describe TasteTester::SSH do
   end
 
   context 'test custom ssh configs linux - generated ssh command' do
-
     let(:mock_generated_cmd) do
       'mock_ssh_command_bin -o option1 -o option2 mock_user@mock_host'
     end
@@ -156,8 +158,9 @@ describe TasteTester::SSH do
       TasteTester::Config.jumps 'mock_jump_user@mock_jump_host'
       TasteTester::Config.ssh_command 'mock_ssh_command'
       TasteTester::Config.user 'rossi'
-      TasteTester::Config.ssh_cmd_template "mock_generator_cmd %{arg1} %{arg2} %{jumps}%{host} --user %{user} --get-command"
-      ssh_gen_args_dict =  { :arg1 => 'mock_arg1', :arg2 => 'mock_arg2' }
+      TasteTester::Config.ssh_cmd_template 'mock_generator_cmd ' +
+        '%{arg1} %{arg2} %{jumps} %{host} --user %{user} --get-command'
+      ssh_gen_args_dict = { :arg1 => 'mock_arg1', :arg2 => 'mock_arg2' }
       TasteTester::Config.ssh_gen_args ssh_gen_args_dict
       allow(mock_so).to receive(:run_command).and_return(mock_so)
       allow(mock_so).to receive(:error?).and_return(false)
@@ -172,7 +175,9 @@ describe TasteTester::SSH do
 
     it 'test ssh generated command' do
       expect(tt_ssh.ssh_cmd_generator).to eq(
-        'mock_generator_cmd mock_arg1 mock_arg2 -J mock_jump_user@mock_jump_hostmock_host --user rossi --get-command',
+        'mock_generator_cmd mock_arg1 mock_arg2 ' +
+        '-J mock_jump_user@mock_jump_host mock_host ' +
+        '--user rossi --get-command',
       )
     end
 
@@ -192,12 +197,15 @@ describe TasteTester::SSH do
     it 'test ssh exception message' do
       allow(Mixlib::ShellOut).to receive(:new).and_return(mock_so)
       expect(tt_ssh.ssh_base_cmd).to eq(mock_generated_cmd)
+      regex_msg = 'SSH returned error ' +
+        "while connecting to #{tt_ssh.ssh_target}.*#{mock_generated_cmd}" +
+        ".*The above command was generated.*#{tt_ssh.ssh_cmd_generator}"
       expect(
         TasteTester::Logging.logger,
       ).to receive(
         :error,
       ).with(
-        /SSH returned error while connecting to #{tt_ssh.ssh_target}.*#{mock_generated_cmd}.*The above command was generated.*#{tt_ssh.ssh_cmd_generator}/m,
+        /#{regex_msg}/m,
       )
       expect { tt_ssh.error! }.to raise_error(
         TasteTester::Exceptions::SshError,

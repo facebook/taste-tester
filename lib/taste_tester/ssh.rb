@@ -28,7 +28,7 @@ module TasteTester
       @host = host
       @tunnel = tunnel
       @cmds = []
-      @ssh_gen_cmd = nil
+      @ssh_generated_cmd = nil
     end
 
     def add(string)
