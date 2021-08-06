@@ -149,8 +149,8 @@ describe TasteTester::SSH do
       TasteTester::Config.user 'rossi'
       TasteTester::Config.ssh_cmd_template 'mock_generator_cmd ' +
         '%{arg1} %{arg2} %{jumps} %{host} --user %{user} --get-command'
-      ssh_gen_args_dict = { :arg1 => 'mock_arg1', :arg2 => 'mock_arg2' }
-      TasteTester::Config.ssh_gen_args ssh_gen_args_dict
+      ssh_gen_args_hash = { :arg1 => 'mock_arg1', :arg2 => 'mock_arg2' }
+      TasteTester::Config.ssh_gen_args ssh_gen_args_hash
       allow(mock_so).to receive(:run_command).and_return(mock_so)
       allow(mock_so).to receive(:error?).and_return(false)
       allow(mock_so).to receive(:stderr).and_return('')
