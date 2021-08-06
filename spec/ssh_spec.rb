@@ -153,13 +153,9 @@ describe TasteTester::SSH do
       TasteTester::Config.ssh_gen_args ssh_gen_args_hash
       allow(mock_so).to receive(:run_command).and_return(mock_so)
       allow(mock_so).to receive(:error?).and_return(false)
+      allow(mock_so).to receive(:error!).and_return(mock_generated_cmd)
       allow(mock_so).to receive(:stderr).and_return('')
       allow(mock_so).to receive(:stdout).and_return(mock_generated_cmd)
-    end
-
-    it 'test ssh base command' do
-      allow(Mixlib::ShellOut).to receive(:new).and_return(mock_so)
-      expect(tt_ssh.ssh_base_cmd).to eq(mock_generated_cmd)
     end
 
     it 'test ssh generated command' do
@@ -167,6 +163,39 @@ describe TasteTester::SSH do
         'mock_generator_cmd mock_arg1 mock_arg2 ' +
         '-J mock_jump_user@mock_jump_host mock_host ' +
         '--user rossi --get-command',
+      )
+    end
+
+    it 'test ssh base command' do
+      allow(Mixlib::ShellOut).to receive(:new).and_return(mock_so)
+      expect(tt_ssh.ssh_base_cmd).to eq(mock_generated_cmd)
+    end
+
+    it 'test ssh base command exception' do
+      error_message = 'command failure message'
+      allow(mock_so).to receive(:error!).and_raise(
+        Mixlib::ShellOut::ShellCommandFailed, error_message
+      )
+      allow(Mixlib::ShellOut).to receive(:new).and_return(mock_so)
+      allow(tt_ssh).to receive(:exit).and_raise(StandardError)
+      regex_msg = error_message
+      expect(
+        TasteTester::Logging.logger,
+      ).to receive(
+        :error,
+      ).with(
+        /#{regex_msg}/m,
+      )
+      regex_msg = 'mock_generator_cmd.*failed during execution'
+      expect(
+        TasteTester::Logging.logger,
+      ).to receive(
+        :error,
+      ).with(
+        /#{regex_msg}/m,
+      )
+      expect { tt_ssh.ssh_base_cmd }.to raise_error(
+        StandardError,
       )
     end
 

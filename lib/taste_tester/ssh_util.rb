@@ -36,8 +36,20 @@ module TasteTester
           # we store this generated command inside a class variable
           # so that we can directly refer to this while printing
           # logs and error messages
-          @ssh_generated_cmd ||=
-            Mixlib::ShellOut.new(ssh_cmd_generator).run_command.stdout.chomp
+          begin
+            generator = Mixlib::ShellOut.new(ssh_cmd_generator)
+            # run the generator command only if it's not run already
+            if @ssh_generated_cmd.nil?
+              @ssh_generated_cmd = generator.run_command.stdout.chomp
+              generator.error!
+            end
+            @ssh_generated_cmd
+          rescue Mixlib::ShellOut::ShellCommandFailed => e
+            logger.error("The generator command: #{ssh_cmd_generator} " +
+                         'failed during execution')
+            logger.error(e.message)
+            exit(1)
+          end
         end
       end
 
