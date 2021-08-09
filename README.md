@@ -121,9 +121,10 @@ The following options are also available:
   Default: false
 * impact - analyze local changes to determine which hosts/roles to test.
   Default: false
-* ssh_cmd_template - A variable to supply a custom ssh command generator which
-  will be invoked by TT to generate a vanilla command. This can be expressed in a template
-  format, with the arguments supplied using `ssh_gen_args`
+* ssh_cmd_gen_template - A variable to supply a custom ssh command
+  generator which will be invoked by TT to generate a vanilla command.
+  This can be expressed in a template format, with the arguments
+  supplied using `ssh_cmd_gen_args`
   Default: nil
 
 ## Plugin

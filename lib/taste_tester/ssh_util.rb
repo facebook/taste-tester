@@ -20,19 +20,19 @@ module TasteTester
       end
 
       def ssh_cmd_generator
-        if TasteTester::Config.ssh_cmd_template
+        if TasteTester::Config.ssh_cmd_gen_template
           base_gen_args = {
             :user => TasteTester::Config.user,
             :jumps => jumps,
             :host => @host,
           }
-          TasteTester::Config.ssh_cmd_template %
-            base_gen_args.update(TasteTester::Config.ssh_gen_args)
+          TasteTester::Config.ssh_cmd_gen_template %
+            base_gen_args.update(TasteTester::Config.ssh_cmd_gen_args)
         end
       end
 
       def ssh_generated_cmd
-        if TasteTester::Config.ssh_cmd_template
+        if TasteTester::Config.ssh_cmd_gen_template
           # we store this generated command inside a class variable
           # so that we can directly refer to this while printing
           # logs and error messages
@@ -62,7 +62,7 @@ module TasteTester
       end
 
       def ssh_base_cmd
-        if TasteTester::Config.ssh_cmd_template
+        if TasteTester::Config.ssh_cmd_gen_template
           ssh_generated_cmd
         else
           ssh_vanilla_cmd
@@ -79,7 +79,7 @@ module TasteTester
 
       ERRORMESSAGE
 
-        if TasteTester::Config.ssh_cmd_template
+        if TasteTester::Config.ssh_cmd_gen_template
           error += <<~ERRORMESSAGE
 
   The above command was generated, and it may be useful to run the generator directly instead:

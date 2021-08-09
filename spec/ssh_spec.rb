@@ -147,10 +147,10 @@ describe TasteTester::SSH do
       TasteTester::Config.ssh_connect_timeout 10
       TasteTester::Config.jumps 'mock_jump_user@mock_jump_host'
       TasteTester::Config.user 'rossi'
-      TasteTester::Config.ssh_cmd_template 'mock_generator_cmd ' +
+      TasteTester::Config.ssh_cmd_gen_template 'mock_generator_cmd ' +
         '%{arg1} %{arg2} %{jumps} %{host} --user %{user} --get-command'
-      ssh_gen_args_hash = { :arg1 => 'mock_arg1', :arg2 => 'mock_arg2' }
-      TasteTester::Config.ssh_gen_args ssh_gen_args_hash
+      ssh_cmd_gen_args_hash = { :arg1 => 'mock_arg1', :arg2 => 'mock_arg2' }
+      TasteTester::Config.ssh_cmd_gen_args ssh_cmd_gen_args_hash
       allow(mock_so).to receive(:run_command).and_return(mock_so)
       allow(mock_so).to receive(:error?).and_return(false)
       allow(mock_so).to receive(:error!).and_return(mock_generated_cmd)
