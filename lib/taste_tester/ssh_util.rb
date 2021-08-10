@@ -37,9 +37,9 @@ module TasteTester
           # so that we can directly refer to this while printing
           # logs and error messages
           begin
-            generator = Mixlib::ShellOut.new(ssh_cmd_generator)
             # run the generator command only if it's not run already
             if @ssh_generated_cmd.nil?
+              generator = Mixlib::ShellOut.new(ssh_cmd_generator)              
               @ssh_generated_cmd = generator.run_command.stdout.chomp
               generator.error!
             end
