@@ -130,7 +130,6 @@ The following options are also available:
   * `user` - the user to SSH as
   For example:
   `ssh_gen %{jumps} --user %{user} %{host}`
-  In addition, further arguments can be passed using `ssh_cmd_gen_args`
   Default: nil
 
 ## Plugin

@@ -27,7 +27,7 @@ module TasteTester
             :host => @host,
           }
           TasteTester::Config.ssh_cmd_gen_template %
-            base_gen_args.update(TasteTester::Config.ssh_cmd_gen_args)
+            base_gen_args
         end
       end
 
@@ -39,7 +39,7 @@ module TasteTester
           begin
             # run the generator command only if it's not run already
             if @ssh_generated_cmd.nil?
-              generator = Mixlib::ShellOut.new(ssh_cmd_generator)              
+              generator = Mixlib::ShellOut.new(ssh_cmd_generator)
               @ssh_generated_cmd = generator.run_command.stdout.chomp
               generator.error!
             end
