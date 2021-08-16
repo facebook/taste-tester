@@ -15,27 +15,81 @@
 module TasteTester
   class SSH
     module Util
-      def ssh_base_cmd
-        jumps = TasteTester::Config.jumps ?
-          "-J #{TasteTester::Config.jumps}" : ''
-        "#{TasteTester::Config.ssh_command} #{jumps} -T -o BatchMode=yes " +
-          '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
-          "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout}"
+      def jumps
+        TasteTester::Config.jumps ? "-J #{TasteTester::Config.jumps}" : ''
       end
 
-      def ssh_target
-        "#{TasteTester::Config.user}@#{@host}"
+      def ssh_cmd_generator
+        if TasteTester::Config.ssh_cmd_gen_template
+          base_gen_args = {
+            :user => TasteTester::Config.user,
+            :jumps => jumps,
+            :host => @host,
+          }
+          TasteTester::Config.ssh_cmd_gen_template %
+            base_gen_args
+        end
+      end
+
+      def ssh_generated_cmd
+        if TasteTester::Config.ssh_cmd_gen_template
+          # we store this generated command inside a class variable
+          # so that we can directly refer to this while printing
+          # logs and error messages
+          begin
+            # run the generator command only if it's not run already
+            unless @ssh_generated_cmd
+              generator = Mixlib::ShellOut.new(ssh_cmd_generator).run_command
+              generator.error!
+              @ssh_generated_cmd = generator.stdout.chomp
+            end
+            @ssh_generated_cmd
+          rescue Mixlib::ShellOut::ShellCommandFailed => e
+            logger.error("The generator command: #{ssh_cmd_generator} " +
+                         'failed during execution')
+            logger.error(e.message)
+            exit(1)
+          end
+        end
+      end
+
+      def ssh_vanilla_cmd
+        "#{TasteTester::Config.ssh_command} #{jumps} -T -o BatchMode=yes " +
+          '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ' +
+          "-o ConnectTimeout=#{TasteTester::Config.ssh_connect_timeout} " +
+          @extra_options.to_s +
+          "#{TasteTester::Config.user}@#{@host}"
+      end
+
+      def ssh_base_cmd
+        if TasteTester::Config.ssh_cmd_gen_template
+          ssh_generated_cmd
+        else
+          ssh_vanilla_cmd
+        end
       end
 
       def error!
         error = <<~ERRORMESSAGE
-  SSH returned error while connecting to #{TasteTester::Config.user}@#{@host}
+  SSH returned error while connecting to #{@host}
   The host might be broken or your SSH access is not working properly
-  Try doing
+  Try running the following command to see if ssh is good:
 
-      #{ssh_base_cmd} -v #{ssh_target}
+      #{ssh_base_cmd} -v
 
-  to see if ssh connection is good.
+      ERRORMESSAGE
+
+        if TasteTester::Config.ssh_cmd_gen_template
+          error += <<~ERRORMESSAGE
+
+  The above command was generated, and it may be useful to run the generator directly instead:
+
+      #{ssh_cmd_generator}
+      ERRORMESSAGE
+        end
+
+        error += <<~ERRORMESSAGE
+
   If ssh works, add '-v' key to taste-tester to see the list of commands it's
   trying to execute, and try to run them manually on destination host
         ERRORMESSAGE
@@ -69,7 +123,7 @@ module TasteTester
         else
           cmds = command_list.join(' && ')
         end
-        cmd = "#{ssh} #{ssh_target} "
+        cmd = "#{ssh} "
         cc = Base64.encode64(cmds).delete("\n")
         if TasteTester::Config.windows_target
 

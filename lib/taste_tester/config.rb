@@ -53,6 +53,7 @@ module TasteTester
     use_ssh_tunnels false
     ssh_command 'ssh'
     ssh_connect_timeout 5
+    ssh_cmd_gen_template nil
     use_ssl true
     chef_zero_logging true
     chef_config_path '/etc/chef'

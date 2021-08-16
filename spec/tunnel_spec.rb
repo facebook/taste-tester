@@ -63,7 +63,7 @@ describe TasteTester::Tunnel do
         '-o ServerAliveInterval=10 ' +
         '-o ServerAliveCountMax=6 ' +
         '-f ' +
-        '-R :localhost:1234  ' +
+        '-R 4001:localhost:1234 ' +
         'root@mock_host',
       )
       expect(tt_tunnel.cmd).to include(
@@ -95,7 +95,7 @@ describe TasteTester::Tunnel do
         '-o ServerAliveInterval=10 ' +
         '-o ServerAliveCountMax=6 ' +
         '-f ' +
-        '-R :localhost:1234  ' +
+        '-R 4001:localhost:1234 ' +
         'rossi@mock_host',
       )
       expect(tt_tunnel.cmd).to include(
@@ -127,7 +127,7 @@ describe TasteTester::Tunnel do
         '-o ServerAliveInterval=10 ' +
         '-o ServerAliveCountMax=6 ' +
         '-f ' +
-        '-R :localhost:1234  ' +
+        '-R 4001:localhost:1234 ' +
         'rossi@mock_host',
       )
       expect(tt_tunnel.cmd).to include(

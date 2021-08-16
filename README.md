@@ -121,6 +121,16 @@ The following options are also available:
   Default: false
 * impact - analyze local changes to determine which hosts/roles to test.
   Default: false
+* ssh_cmd_gen_template - Provide a command to run, whose stdout will be a
+  vanilla ssh command Taste Tester will invoke to access test nodes.
+  The command should be a template and will be passed the
+  following variables:
+  * `jumps` - any jumphost arguments supplied via -J option
+  * `host` - the host to SSH to
+  * `user` - the user to SSH as
+  For example:
+  `ssh_gen %{jumps} --user %{user} %{host}`
+  Default: nil
 
 ## Plugin
 
