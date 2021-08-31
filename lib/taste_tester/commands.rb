@@ -275,7 +275,7 @@ module TasteTester
       # We want to compare changes in the current directory (working set) with
       # the "most recent" commit in the VCS. For SVN, this will be the latest
       # commit on the checked out repository (i.e. 'trunk'). Git/Hg may have
-      # different tags or labels assigned to the master branch, (i.e. 'master',
+      # different tags or labels assigned to the default branch, (i.e. 'main',
       # 'stable', etc.) and should be configured if different than the default.
       start_ref = case repo
                   when BetweenMeals::Repo::Svn
