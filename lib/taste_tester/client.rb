@@ -216,12 +216,16 @@ module TasteTester
     def full
       logger.warn('Doing full upload')
       if TasteTester::Config.bundle
+        logger.warn('Creating bundle...')
         bundle_upload
         # only leave early if true (strictly bundle mode only)
         return if TasteTester::Config.bundle == true
       end
+      logger.warn('Uploading cookbooks...')
       @knife.cookbook_upload_all
+      logger.warn('Uploading roles...')
       @knife.role_upload_all
+      logger.warn('Uploading databags...')
       @knife.databag_upload_all
     end
 
