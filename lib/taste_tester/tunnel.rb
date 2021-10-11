@@ -31,9 +31,16 @@ module TasteTester
       @host = host
       @port = TasteTester::Config.tunnel_port
       @server = server
+      # park any tunnel specific configured options here
+      # these options cannot be configred by the ssh_generator so
+      # they need to be appended to the ssh_generator_cmd
+      @tunnel_options = "-f -R #{@port}:localhost:#{@server.port} "
+      # these should include all the tunnel options plus
+      # any additional static options - ssh_generator_cmd should set the
+      # static options on its own so it won't need this
       @extra_options = '-o ServerAliveInterval=10 ' +
         '-o ServerAliveCountMax=6 ' +
-        "-f -R #{@port}:localhost:#{@server.port} "
+        @tunnel_options
     end
 
     def run
