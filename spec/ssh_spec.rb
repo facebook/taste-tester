@@ -149,7 +149,6 @@ describe TasteTester::SSH do
       TasteTester::Config.user 'rossi'
       TasteTester::Config.ssh_cmd_gen_template 'mock_generator_cmd ' +
         'mock_arg1 mock_arg2 %{jumps} %{host} --user %{user} --get-command'
-      TasteTester::Config.use_ssh_tunnels true
       allow(mock_so).to receive(:run_command).and_return(mock_so)
       allow(mock_so).to receive(:error?).and_return(false)
       allow(mock_so).to receive(:error!).and_return(mock_generated_cmd)
