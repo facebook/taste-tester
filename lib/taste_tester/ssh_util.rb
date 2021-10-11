@@ -43,7 +43,7 @@ module TasteTester
               generator.error!
               @ssh_generated_cmd = generator.stdout.chomp
             end
-            @ssh_generated_cmd
+            @ssh_generated_cmd + @extra_options.to_s
           rescue Mixlib::ShellOut::ShellCommandFailed => e
             logger.error("The generator command: #{ssh_cmd_generator} " +
                          'failed during execution')
