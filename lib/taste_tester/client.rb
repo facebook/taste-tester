@@ -199,7 +199,7 @@ module TasteTester
             )
             populate(
               stream, writer, TasteTester::Config.relative_databag_dir,
-              'databag'
+              'data_bags'
             )
           end
           stream.close
