@@ -65,10 +65,10 @@ module TasteTester
 
     def self.run_parallel(mode, hosts, repo = nil)
       host_threads = []
-      tested_hosts = []
+      return_code = {}
       connect_failures = 0
       server = TasteTester::Server.new
-      hosts.each do |hostname|
+      hosts.to_set.each do |hostname|
         # Poor man thread pool manager: keeping it simple
         nb_threads_over_max = host_threads.length -
           TasteTester::Config.parallel_hosts
@@ -78,14 +78,14 @@ module TasteTester
         host_threads << Thread.new do
           Thread.current[:hostname] = hostname
           Thread.current.report_on_exception = false
-          TasteTester::Host.new(hostname, server).send mode
+          Thread.current[:status] = TasteTester::Host.new(hostname, server).send mode
         end
       end
       host_threads.each do |host_thread|
         begin
           host_thread.join
           hostname = host_thread[:hostname]
-          tested_hosts << hostname
+          return_code[hostname] = host_thread[:status]
         rescue TasteTester::Exceptions::AlreadyTestingError => e
           logger.error("User #{e.username} is already testing on #{hostname}")
         rescue TasteTester::Exceptions::SshError
@@ -98,32 +98,8 @@ module TasteTester
           raise
         end
       end
-      if mode == :test
-        unless TasteTester::Config.skip_post_test_hook ||
-            TasteTester::Config.linkonly
-          TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
-                                       tested_hosts)
-        end
-      end
-      if tested_hosts.to_set == hosts.to_set
-        # No exceptions, complete success: every host listed is now configured
-        # to use our chef-zero instance.
-        exit(0)
-      end
-      if tested_hosts.empty?
-        if connect_failures > 0
-          # All the hosts we had failed, with at least one because of ssh
-          exit(1)
-        end
-        # All requested hosts are being tested by another user. We didn't change
-        # their configuration.
-        exit(3)
-      end
-      # Otherwise, we got a mix of success and failure due to being tested by
-      # another user. We'll be pessemistic and return an error because the
-      # intent to taste test the complete list was not successful.
-      # code.
-      exit(2)
+      puts return_code
+      return_code
     end
 
     def self.test
@@ -163,7 +139,32 @@ module TasteTester
           TasteTester::Config.linkonly
         TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
       end
-      self.run_parallel(:test, hosts, repo)
+      return_code = self.run_parallel(:test, hosts, repo)
+      successful_hosts = return_code.select{|_,st| [*st].first.zero?}.keys
+      unless TasteTester::Config.skip_post_test_hook ||
+          TasteTester::Config.linkonly
+        TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
+                                      successful_hosts)
+      end
+      if successful_hosts.to_set == hosts.to_set
+        # No exceptions, complete success: every host listed is now configured
+        # to use our chef-zero instance.
+        exit(0)
+      end
+      if successful_hosts.empty?
+        if connect_failures > 0
+          # All the hosts we had failed, with at least one because of ssh
+          exit(1)
+        end
+        # All requested hosts are being tested by another user. We didn't change
+        # their configuration.
+        exit(3)
+      end
+      # Otherwise, we got a mix of success and failure due to being tested by
+      # another user. We'll be pessemistic and return an error because the
+      # intent to taste test the complete list was not successful.
+      # code.
+      exit(2)
     end
 
     def self.untest
@@ -172,7 +173,7 @@ module TasteTester
         logger.error('You must provide a hostname')
         exit(1)
       end
-      self.run_parallel(:untest, hosts)
+      return_code = self.run_parallel(:untest, hosts)
     end
 
     def self.runchef
@@ -181,7 +182,17 @@ module TasteTester
         logger.warn('You must provide a hostname')
         exit(1)
       end
-      self.run_parallel(:runchef, hosts)
+      return_code = self.run_parallel(:runchef, hosts)
+      return_code.each do |hostname, status|
+        logger.warn("Finished #{TasteTester::Config.chef_client_command}" +
+                    " on #{hostname} with status #{status}")
+        if status.zero?
+          msg = "#{TasteTester::Config.chef_client_command} was successful" +
+                ' - please log to the host and confirm all the intended' +
+                ' changes were made'
+          logger.error msg.upcase
+        end
+      end
     end
 
     def self.keeptesting
@@ -190,7 +201,7 @@ module TasteTester
         logger.warn('You must provide a hostname')
         exit(1)
       end
-      self.run_parallel(:keeptesting, hosts)
+      return_code = self.run_parallel(:keeptesting, hosts)
     end
 
     def self.upload

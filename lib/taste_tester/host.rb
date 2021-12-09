@@ -26,6 +26,28 @@ require 'taste_tester/tunnel'
 require 'taste_tester/exceptions'
 
 module TasteTester
+  # Wrapper around IO to stream, prefixing the lines with the hostname
+  class IO < IO
+    def initialize(prefix, fd)
+      @prefix = prefix.nil? || prefix.empty? ? '' : "#{prefix} "
+      @first = true
+      super(fd)
+    end
+    def <<(obj)
+      if @first
+        @first = false
+        super(@prefix) if @prefix
+      end
+      msg = obj.to_s
+      if msg[-1] == "\n"
+        @first = true
+        msg.chomp!
+      end
+      super(msg.gsub("\n", "\n#{@prefix}"))
+      super("\n") if @first
+    end
+  end
+
   # Manage state of the remote node
   class Host
     include TasteTester::Logging
@@ -50,16 +72,9 @@ module TasteTester
       transport = get_transport
       transport << TasteTester::Config.chef_client_command
 
-      io = IO.new(1)
+      io = TasteTester::IO.new(name, 1)
       status, = transport.run(io)
-      logger.warn("Finished #{TasteTester::Config.chef_client_command}" +
-                  " on #{@name} with status #{status}")
-      if status.zero?
-        msg = "#{TasteTester::Config.chef_client_command} was successful" +
-              ' - please log to the host and confirm all the intended' +
-              ' changes were made'
-        logger.error msg.upcase
-      end
+      status
     end
 
     def get_transport
@@ -125,6 +140,7 @@ module TasteTester
         cmds.each { |c| transport << c }
         transport.run!
       end
+      status
     end
 
     def untest
