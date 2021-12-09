@@ -70,7 +70,8 @@ module TasteTester
       server = TasteTester::Server.new
       hosts.each do |hostname|
         # Poor man thread pool manager: keeping it simple
-        nb_threads_over_max = host_threads.length - TasteTester::Config.parallel_hosts
+        nb_threads_over_max = host_threads.length -
+          TasteTester::Config.parallel_hosts
         if nb_threads_over_max >= 0
           host_threads[nb_threads_over_max].join
         end
@@ -98,11 +99,10 @@ module TasteTester
         end
       end
       if mode == :test
-        puts "Repo is: #{repo} -- parallel"
         unless TasteTester::Config.skip_post_test_hook ||
             TasteTester::Config.linkonly
           TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
-                                      tested_hosts)
+                                       tested_hosts)
         end
       end
       if tested_hosts.to_set == hosts.to_set
@@ -163,7 +163,6 @@ module TasteTester
           TasteTester::Config.linkonly
         TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
       end
-      puts "Repo is: #{repo} -- before parallel"
       self.run_parallel(:test, hosts, repo)
     end
 
