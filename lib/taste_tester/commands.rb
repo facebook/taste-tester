@@ -63,6 +63,69 @@ module TasteTester
       end
     end
 
+    def self.run_parallel(mode, hosts, repo = nil)
+      host_threads = []
+      tested_hosts = []
+      connect_failures = 0
+      server = TasteTester::Server.new
+      hosts.each do |hostname|
+        # Poor man thread pool manager: keeping it simple
+        nb_threads_over_max = host_threads.length - TasteTester::Config.parallel_hosts
+        if nb_threads_over_max >= 0
+          host_threads[nb_threads_over_max].join
+        end
+        host_threads << Thread.new do
+          Thread.current[:hostname] = hostname
+          Thread.current.report_on_exception = false
+          TasteTester::Host.new(hostname, server).send mode
+        end
+      end
+      host_threads.each do |host_thread|
+        begin
+          host_thread.join
+          hostname = host_thread[:hostname]
+          tested_hosts << hostname
+        rescue TasteTester::Exceptions::AlreadyTestingError => e
+          logger.error("User #{e.username} is already testing on #{hostname}")
+        rescue TasteTester::Exceptions::SshError
+          logger.error("Cannot connect to #{hostname}")
+          connect_failures += 1
+        rescue StandardError => e
+          # Call error handling hook and re-raise
+          TasteTester::Hooks.post_error(TasteTester::Config.dryrun, e,
+                                        __method__, hostname)
+          raise
+        end
+      end
+      if mode == :test
+        puts "Repo is: #{repo} -- parallel"
+        unless TasteTester::Config.skip_post_test_hook ||
+            TasteTester::Config.linkonly
+          TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
+                                      tested_hosts)
+        end
+      end
+      if tested_hosts.to_set == hosts.to_set
+        # No exceptions, complete success: every host listed is now configured
+        # to use our chef-zero instance.
+        exit(0)
+      end
+      if tested_hosts.empty?
+        if connect_failures > 0
+          # All the hosts we had failed, with at least one because of ssh
+          exit(1)
+        end
+        # All requested hosts are being tested by another user. We didn't change
+        # their configuration.
+        exit(3)
+      end
+      # Otherwise, we got a mix of success and failure due to being tested by
+      # another user. We'll be pessemistic and return an error because the
+      # intent to taste test the complete list was not successful.
+      # code.
+      exit(2)
+    end
+
     def self.test
       hosts = TasteTester::Config.servers
       unless hosts
@@ -82,7 +145,6 @@ module TasteTester
         end
         upload
       end
-      server = TasteTester::Server.new
       unless TasteTester::Config.linkonly
         if TasteTester::Config.no_repo
           repo = nil
@@ -101,44 +163,8 @@ module TasteTester
           TasteTester::Config.linkonly
         TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
       end
-      tested_hosts = []
-      hosts.each do |hostname|
-        host = TasteTester::Host.new(hostname, server)
-        begin
-          host.test
-          tested_hosts << hostname
-        rescue TasteTester::Exceptions::AlreadyTestingError => e
-          logger.error("User #{e.username} is already testing on #{hostname}")
-        rescue StandardError => e
-          # Call error handling hook and re-raise
-          TasteTester::Hooks.post_error(TasteTester::Config.dryrun, e,
-                                        __method__, hostname)
-          raise
-        end
-      end
-      unless TasteTester::Config.skip_post_test_hook ||
-          TasteTester::Config.linkonly
-        TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
-                                     tested_hosts)
-      end
-      # Strictly: hosts and tested_hosts should be sets to eliminate variance in
-      # order or duplicates. The exact comparison works here because we're
-      # building tested_hosts from hosts directly.
-      if tested_hosts == hosts
-        # No exceptions, complete success: every host listed is now configured
-        # to use our chef-zero instance.
-        exit(0)
-      end
-      if tested_hosts.empty?
-        # All requested hosts are being tested by another user. We didn't change
-        # their configuration.
-        exit(3)
-      end
-      # Otherwise, we got a mix of success and failure due to being tested by
-      # another user. We'll be pessemistic and return an error because the
-      # intent to taste test the complete list was not successful.
-      # code.
-      exit(2)
+      puts "Repo is: #{repo} -- before parallel"
+      self.run_parallel(:test, hosts, repo)
     end
 
     def self.untest
@@ -147,18 +173,7 @@ module TasteTester
         logger.error('You must provide a hostname')
         exit(1)
       end
-      server = TasteTester::Server.new
-      hosts.each do |hostname|
-        host = TasteTester::Host.new(hostname, server)
-        begin
-          host.untest
-        rescue StandardError => e
-          # Call error handling hook and re-raise
-          TasteTester::Hooks.post_error(TasteTester::Config.dryrun, e,
-                                        __method__, hostname)
-          raise
-        end
-      end
+      self.run_parallel(:untest, hosts)
     end
 
     def self.runchef
@@ -167,18 +182,7 @@ module TasteTester
         logger.warn('You must provide a hostname')
         exit(1)
       end
-      server = TasteTester::Server.new
-      hosts.each do |hostname|
-        host = TasteTester::Host.new(hostname, server)
-        begin
-          host.runchef
-        rescue StandardError => e
-          # Call error handling hook and re-raise
-          TasteTester::Hooks.post_error(TasteTester::Config.dryrun, e,
-                                        __method__, hostname)
-          raise
-        end
-      end
+      self.run_parallel(:runchef, hosts)
     end
 
     def self.keeptesting
@@ -187,18 +191,7 @@ module TasteTester
         logger.warn('You must provide a hostname')
         exit(1)
       end
-      server = TasteTester::Server.new
-      hosts.each do |hostname|
-        host = TasteTester::Host.new(hostname, server)
-        begin
-          host.keeptesting
-        rescue StandardError => e
-          # Call error handling hook and re-raise
-          TasteTester::Hooks.post_error(TasteTester::Config.dryrun, e,
-                                        __method__, hostname)
-          raise
-        end
-      end
+      self.run_parallel(:keeptesting, hosts)
     end
 
     def self.upload
