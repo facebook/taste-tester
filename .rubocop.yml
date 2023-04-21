@@ -1,2 +1,10 @@
 inherit_from:
-  - https://raw.githubusercontent.com/facebook/chef-cookbooks/main/.rubocop_55.yml
+  - https://raw.githubusercontent.com/facebook/chef-cookbooks/main/.rubocop.yml
+
+# TODO - ratchet lint into place
+Style/GlobalStdStream:
+  Enabled: false
+
+# TODO - ratchet lint into place
+Gemspec/RequiredRubyVersion:
+  Enabled: false
