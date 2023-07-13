@@ -300,7 +300,7 @@ module TasteTester
           :databag_dir =>
             TasteTester::Config.relative_databag_dir,
         },
-        @track_symlinks,
+        TasteTester::Config.track_symlinks,
       )
 
       return changeset
