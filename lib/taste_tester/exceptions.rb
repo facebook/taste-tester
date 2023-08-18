@@ -18,10 +18,13 @@ module TasteTester
   module Exceptions
     class SshError < StandardError
     end
+
     class LocalLinkError < StandardError
     end
+
     class NoOpError < StandardError
     end
+
     class AlreadyTestingError < StandardError
       attr_reader :username
 
