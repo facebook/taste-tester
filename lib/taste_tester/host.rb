@@ -367,7 +367,7 @@ module TasteTester
           FileUtils.touch(File.join(taste_tester_dest, 'chefignore'))
           uri = URI.parse('#{url}/file_store/tt.tgz')
           Net::HTTP.start(
-            uri.host,
+            uri.hostname,
             uri.port,
             :use_ssl => #{TasteTester::Config.use_ssl},
             # we expect self signed certificates
