@@ -21,20 +21,10 @@ jobs:
       run: bundle install
     - name: Run rspec
       run: bundle exec rspec
+    - name: Enable rubocop matcher
+      run: echo "::add-matcher::.github/rubocop_matcher.json"
     - name: Run rubocop
       run: bundle exec rubocop --display-cop-names
-# This doesn't work on PRs from forks due to GITHUB_TOKEN, which makes
-# it kinda useless for now
-# https://github.com/andrewmcodes/rubocop-linter-action/issues/68
-#  rubocop:
-#    runs-on: ubuntu-latest
-#    steps:
-#    - name: Checkout repository
-#      uses: actions/checkout@v3
-#    - name: Run Rubocop Linter
-#      uses: andrewmcodes/rubocop-linter-action@v3.2.0
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   markdown:
     runs-on: ubuntu-latest
     steps:
