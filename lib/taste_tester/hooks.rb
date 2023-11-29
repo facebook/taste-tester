@@ -16,8 +16,7 @@
 
 require 'taste_tester/logging'
 require 'between_meals/util'
-require 'between_meals/repo/hg'
-require 'between_meals/repo/git'
+require 'between_meals/repo'
 
 module TasteTester
   # Hooks placeholders
