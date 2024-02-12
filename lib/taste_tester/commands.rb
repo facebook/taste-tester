@@ -278,12 +278,12 @@ module TasteTester
       # different tags or labels assigned to the default branch, (i.e. 'main',
       # 'stable', etc.) and should be configured if different than the default.
       start_ref = case repo
+                  when BetweenMeals::Repo::Hg
+                    TasteTester::Config.vcs_start_ref_hg
                   when BetweenMeals::Repo::Svn
                     repo.latest_revision
                   when BetweenMeals::Repo::Git
                     TasteTester::Config.vcs_start_ref_git
-                  when BetweenMeals::Repo::Hg
-                    TasteTester::Config.vcs_start_ref_hg
                   end
       end_ref = TasteTester::Config.vcs_end_ref
 
