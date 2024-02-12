@@ -38,6 +38,8 @@ module TasteTester
     plugin_path nil
     chef_zero_path nil
     bundle false
+    bundle_compression_level 6
+    bundle_generation_processes nil
     verbosity Logger::WARN
     timestamp false
     user 'root'
