@@ -170,7 +170,7 @@ module TasteTester
             name = File.join(file_entry[DESTINATION_PATH_INDEX], file_entry[RELATIVE_PATH_INDEX])
 
             sep_index = file_entry[RELATIVE_PATH_INDEX].index(File::SEPARATOR)
-            minus_first = sep_index.nil? ? '' : file_entry[RELATIVE_PATH_INDEX][sep_index+1..]
+            minus_first = sep_index.nil? ? '' : file_entry[RELATIVE_PATH_INDEX][sep_index+1..-1]
 
             chefignores = Chef::Cookbook::Chefignore.new(file_path)
             next if chefignores.ignored?(file_entry[RELATIVE_PATH_INDEX]) ||
