@@ -22,8 +22,13 @@ require 'between_meals/knife'
 require 'between_meals/changeset'
 require 'chef/log'
 require 'chef/cookbook/chefignore'
+require 'parallel'
+require 'etc'
 
 module TasteTester
+  BASE_PATH_INDEX = 0
+  RELATIVE_PATH_INDEX = 1
+  DESTINATION_PATH_INDEX = 2
   # Client side upload functionality
   # Ties together Repo/Changeset diff logic
   # and Server/Knife uploads
@@ -129,22 +134,17 @@ module TasteTester
 
     private
 
-    def populate(stream, writer, path, destination)
+    def gen_file_list(path, destination)
+      targets = []
       full_path = File.join(File.join(TasteTester::Config.repo, path))
       return unless File.directory?(full_path)
-      chefignores = Chef::Cookbook::Chefignore.new(full_path)
-      # everything is relative to the repo dir. chdir makes handling all the
-      # paths within this simpler
       Dir.chdir(full_path) do
         look_at = ['']
         while (prefix = look_at.pop)
           Dir.glob(File.join("#{prefix}**", '*'), File::FNM_DOTMATCH) do |p|
-            minus_first = p.split(
-              File::SEPARATOR,
-            )[1..-1].join(File::SEPARATOR)
-            next if chefignores.ignored?(p) ||
-              chefignores.ignored?(minus_first)
-            name = File.join(destination, p)
+            sep_index = p.index(File::SEPARATOR)
+            minus_first = sep_index.nil? ? '' : p[sep_index+1..-1]
+
             if File.directory?(p)
               # we don't store directories in the tar, but we do want to follow
               # top level symlinked directories as they are used to share
@@ -152,56 +152,76 @@ module TasteTester
               if minus_first == '' && File.symlink?(p)
                 look_at.push("#{p}#{File::SEPARATOR}")
               end
-            elsif File.symlink?(p)
-              # tar handling of filenames > 100 characters gets complex. We'd
-              # use split_name from Minitar, but it's a private method. It's
-              # reasonable to assume that all symlink names in the bundle are
-              # less than 100 characters long. Long term, the version of minitar
-              # in chefdk should be upgraded.
-              fail 'Add support for long symlink paths' if name.size > 100
-              # The version of Minitar included in chefdk does not support
-              # symlinks directly. Therefore we use direct writes to the
-              # underlying stream to reproduce the symlinks
-              symlink = {
-                :name => name,
-                :mode => 0644,
-                :typeflag => '2',
-                :size => 0,
-                :linkname => File.readlink(p),
-                :prefix => '',
-              }
-              stream.write(Minitar::PosixHeader.new(symlink))
             else
-              File.open(p, 'rb') do |r|
-                writer.add_file_simple(
-                  name, :mode => 0644, :size => File.size(r)
-                ) do |d, _opts|
-                  IO.copy_stream(r, d)
-                end
-              end
+              targets << [full_path, p, destination]
             end
           end
         end
       end
+      targets
     end
 
-    def bundle_upload
+    def generate_intermediate_tar(bucket, i, prefix)
+      stream = Tempfile.create([prefix, i.to_s, '.tar'], @server.bundle_dir)
+      Minitar::Writer.open(stream) do |writer|
+        bucket.each do |file_entry|
+          file_path = File.join(file_entry[BASE_PATH_INDEX], file_entry[RELATIVE_PATH_INDEX])
+          name = File.join(file_entry[DESTINATION_PATH_INDEX], file_entry[RELATIVE_PATH_INDEX])
+
+          sep_index = file_entry[RELATIVE_PATH_INDEX].index(File::SEPARATOR)
+          minus_first = sep_index.nil? ? '' : file_entry[RELATIVE_PATH_INDEX][sep_index+1..-1]
+
+          chefignores = Chef::Cookbook::Chefignore.new(file_path)
+          next if chefignores.ignored?(file_entry[RELATIVE_PATH_INDEX]) ||
+            chefignores.ignored?(minus_first)
+
+          if File.symlink?(file_path)
+            # tar handling of filenames > 100 characters gets complex. We'd
+            # use split_name from Minitar, but it's a private method. It's
+            # reasonable to assume that all symlink names in the bundle are
+            # less than 100 characters long. Long term, the version of minitar
+            # in chefdk should be upgraded.
+            fail 'Add support for long symlink paths' if name.size > 100
+            # The version of Minitar included in chefdk does not support
+            # symlinks directly. Therefore we use direct writes to the
+            # underlying stream to reproduce the symlinks
+            symlink = {
+              :name => name,
+              :mode => 0644,
+              :typeflag => '2',
+              :size => 0,
+              :linkname => File.readlink(file_path),
+              :prefix => '',
+            }
+            stream.write(Minitar::PosixHeader.new(symlink))
+          else
+            File.open(file_path, 'rb') do |r|
+              writer.add_file_simple(
+                name, :mode => 0644, :size => File.size(r)
+              ) do |d, _opts|
+                IO.copy_stream(r, d)
+              end
+            end
+          end
+        end
+
+      end
+      stream.close
+      stream.path
+    end
+
+    def assemble_bundle(files)
       dest = File.join(@server.bundle_dir, 'tt.tgz')
       begin
         Tempfile.create(['tt', '.tgz'], @server.bundle_dir) do |tempfile|
-          stream = Zlib::GzipWriter.new(tempfile)
-          Minitar::Writer.open(stream) do |writer|
-            TasteTester::Config.relative_cookbook_dirs.each do |cb_dir|
-              populate(stream, writer, cb_dir, 'cookbooks')
-            end
-            populate(
-              stream, writer, TasteTester::Config.relative_role_dir, 'roles'
-            )
-            populate(
-              stream, writer, TasteTester::Config.relative_databag_dir,
-              'data_bags'
-            )
+          stream = Zlib::GzipWriter.new(tempfile, TasteTester::Config.bundle_compression_level)
+          files.sort.each do |chunk_path|
+            chunk = File.open(chunk_path, 'rb')
+            # don't copy end blocks
+            IO.copy_stream(chunk, stream, (chunk.size - 1024))
+            chunk.close
           end
+          stream.write("\0" * 1024)
           stream.close
           File.rename(tempfile.path, dest)
         end
@@ -210,6 +230,37 @@ module TasteTester
         # happens, then the cleanup of of the temporary file doesn't work,
         # but this is fine and expected.
         nil
+      end
+    end
+
+    def bundle_upload
+      puts 'Running bundle upload'
+      src_dirs = {
+        TasteTester::Config.relative_role_dir => 'roles',
+        TasteTester::Config.relative_databag_dir => 'data_bags',
+      }
+      TasteTester::Config.relative_cookbook_dirs.each do |cb_dir|
+        src_dirs[cb_dir] = 'cookbooks'
+      end
+
+      file_list = []
+      src_dirs.each { |path, dest| file_list += gen_file_list(path, dest) }
+
+      chunks = []
+      prefix = Time.now.to_i.to_s
+      begin
+        processes = TasteTester::Config.bundle_generation_processes || Etc.nprocessors
+        if processes > 1
+          buckets = file_list.each_slice((file_list.length/processes.to_f).round.to_i).to_a
+          chunks = Parallel.map((0...buckets.length), :in_processes => buckets.length) do |i|
+            generate_intermediate_tar(buckets[i], i, prefix)
+          end
+        else
+          chunks = [generate_intermediate_tar(file_list, 0, prefix)]
+        end
+        assemble_bundle(chunks)
+      ensure
+        Dir.glob("#{@server.bundle_dir}/#{prefix}*") { |f| File.unlink(f) }
       end
     end
 
