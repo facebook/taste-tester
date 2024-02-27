@@ -20,6 +20,5 @@ tmp
 *.o
 *.a
 mkmf.log
-bin/
 sbin/
 .rubocop-https*
