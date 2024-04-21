@@ -63,25 +63,40 @@ module TasteTester
       end
     end
 
-    def self.run_parallel(mode, hosts, repo = nil)
-      host_threads = []
+    def self.run_parallel(mode, hosts, repo = nil, threaded_upload = false)
+      all_threads = []
+      running_threads = 0
+      last_running_thread = 0
       return_code = {}
       connect_failures = 0
       server = TasteTester::Server.new
+      if threaded_upload
+        all_threads << Thread.new do
+          Thread.current[:hostname] = :upload
+          Thread.current.report_on_exception = true
+          Thread.current[:status] = upload
+        end
+        running_threads += 1
+      end
+
       hosts.to_set.each do |hostname|
         # Poor man thread pool manager: keeping it simple
-        nb_threads_over_max = host_threads.length -
-          TasteTester::Config.parallel_hosts
-        if nb_threads_over_max >= 0
-          host_threads[nb_threads_over_max].join
+        if running_threads >= TasteTester::Config.parallel_hosts
+          all_threads[last_running_thread].join
+          last_running_thread += 1
         end
-        host_threads << Thread.new do
+        all_threads << Thread.new do
           Thread.current[:hostname] = hostname
           Thread.current.report_on_exception = false
           Thread.current[:status] = TasteTester::Host.new(hostname, server).send mode
         end
+        running_threads += 1
       end
-      host_threads.each do |host_thread|
+
+      # upload will raise on failure so no need of special handling
+      all_threads.shift.join if threaded_upload
+
+      all_threads.each do |host_thread|
         begin
           host_thread.join
           hostname = host_thread[:hostname]
@@ -98,11 +113,12 @@ module TasteTester
           raise
         end
       end
-      puts return_code
       return_code
     end
 
     def self.test
+      do_upload = false
+      logger.warn('Using babar threaded taste-tester')
       hosts = TasteTester::Config.servers
       unless hosts
         logger.warn('You must provide a hostname')
@@ -119,7 +135,7 @@ module TasteTester
         if TasteTester::Config.linkonly
           logger.warn('Ignoring --linkonly because --really not set')
         end
-        upload
+        do_upload = true
       end
       unless TasteTester::Config.linkonly
         if TasteTester::Config.no_repo
@@ -139,7 +155,7 @@ module TasteTester
           TasteTester::Config.linkonly
         TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
       end
-      return_code = self.run_parallel(:test, hosts, repo)
+      return_code = self.run_parallel(:test, hosts, repo, do_upload)
       successful_hosts = return_code.select{|_,st| [*st].first.zero?}.keys
       unless TasteTester::Config.skip_post_test_hook ||
           TasteTester::Config.linkonly
