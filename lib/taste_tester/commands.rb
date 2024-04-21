@@ -63,7 +63,7 @@ module TasteTester
       end
     end
 
-    def self.run_parallel(mode, hosts, repo = nil, threaded_upload = false)
+    def self.run_parallel(mode, hosts, threaded_upload = false)
       all_threads = []
       running_threads = 0
       last_running_thread = 0
@@ -97,21 +97,19 @@ module TasteTester
       all_threads.shift.join if threaded_upload
 
       all_threads.each do |host_thread|
-        begin
-          host_thread.join
-          hostname = host_thread[:hostname]
-          return_code[hostname] = host_thread[:status]
-        rescue TasteTester::Exceptions::AlreadyTestingError => e
-          logger.error("User #{e.username} is already testing on #{hostname}")
-        rescue TasteTester::Exceptions::SshError
-          logger.error("Cannot connect to #{hostname}")
-          connect_failures += 1
-        rescue StandardError => e
-          # Call error handling hook and re-raise
-          TasteTester::Hooks.post_error(TasteTester::Config.dryrun, e,
-                                        __method__, hostname)
-          raise
-        end
+        host_thread.join
+        hostname = host_thread[:hostname]
+        return_code[hostname] = host_thread[:status]
+      rescue TasteTester::Exceptions::AlreadyTestingError => e
+        logger.error("User #{e.username} is already testing on #{hostname}")
+      rescue TasteTester::Exceptions::SshError
+        logger.error("Cannot connect to #{hostname}")
+        connect_failures += 1
+      rescue StandardError => e
+        # Call error handling hook and re-raise
+        TasteTester::Hooks.post_error(TasteTester::Config.dryrun, e,
+                                      __method__, hostname)
+        raise
       end
       return_code
     end
@@ -155,12 +153,12 @@ module TasteTester
           TasteTester::Config.linkonly
         TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
       end
-      return_code = self.run_parallel(:test, hosts, repo, do_upload)
-      successful_hosts = return_code.select{|_,st| [*st].first.zero?}.keys
+      return_code = self.run_parallel(:test, hosts, do_upload)
+      successful_hosts = return_code.select { |_, st| [*st].first.zero? }.keys
       unless TasteTester::Config.skip_post_test_hook ||
           TasteTester::Config.linkonly
         TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
-                                      successful_hosts)
+                                     successful_hosts)
       end
       if successful_hosts.to_set == hosts.to_set
         # No exceptions, complete success: every host listed is now configured
@@ -189,7 +187,7 @@ module TasteTester
         logger.error('You must provide a hostname')
         exit(1)
       end
-      return_code = self.run_parallel(:untest, hosts)
+      self.run_parallel(:untest, hosts)
     end
 
     def self.runchef
@@ -217,7 +215,7 @@ module TasteTester
         logger.warn('You must provide a hostname')
         exit(1)
       end
-      return_code = self.run_parallel(:keeptesting, hosts)
+      self.run_parallel(:keeptesting, hosts)
     end
 
     def self.upload

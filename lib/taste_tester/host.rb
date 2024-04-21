@@ -33,6 +33,7 @@ module TasteTester
       @first = true
       super(fd)
     end
+
     def <<(obj)
       if @first
         @first = false
