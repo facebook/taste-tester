@@ -82,7 +82,7 @@ module TasteTester
       hosts.to_set.each do |hostname|
         # Poor man thread pool manager: keeping it simple
         if running_threads >= TasteTester::Config.parallel_hosts
-          all_threads[last_running_thread].join
+          return_code.merge! _handle_ssh_exception(all_threads[last_running_thread])
           last_running_thread += 1
         end
         all_threads << Thread.new do
@@ -97,21 +97,28 @@ module TasteTester
       all_threads.shift.join if threaded_upload
 
       all_threads.each do |host_thread|
-        host_thread.join
-        hostname = host_thread[:hostname]
-        return_code[hostname] = host_thread[:status]
-      rescue TasteTester::Exceptions::AlreadyTestingError => e
-        logger.error("User #{e.username} is already testing on #{hostname}")
-      rescue TasteTester::Exceptions::SshError
-        logger.error("Cannot connect to #{hostname}")
-        connect_failures += 1
-      rescue StandardError => e
-        # Call error handling hook and re-raise
-        TasteTester::Hooks.post_error(TasteTester::Config.dryrun, e,
-                                      __method__, hostname)
-        raise
+        return_code.merge! [_handle_ssh_exception(host_thread)].to_h
       end
+      # successful_hosts = return_code.select { |_, st| [*st].first.zero? }.keys
       return_code
+    end
+
+    def self._handle_ssh_exception(host_thread)
+      host_thread.join
+      hostname = host_thread[:hostname]
+      return hostname, host_thread[:status]
+    rescue TasteTester::Exceptions::AlreadyTestingError => e
+      logger.error("User #{e.username} is already testing on #{hostname}")
+      return hostname, 42
+    rescue TasteTester::Exceptions::SshError
+      logger.error("Cannot connect to #{hostname}")
+      return hostname, 1
+    rescue StandardError => e
+      # Call error handling hook
+      TasteTester::Hooks.post_error(TasteTester::Config.dryrun, e,
+                                    __method__, hostname)
+      # We do not re-raise here as we want to raise at the end
+      return hostname, 69
     end
 
     def self.test
