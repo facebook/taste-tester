@@ -65,10 +65,10 @@ module TasteTester
 
     def self.run_parallel(mode, hosts, threaded_upload = false)
       all_threads = []
+      long_running_threads = []
       running_threads = 0
       last_running_thread = 0
       return_code = {}
-      connect_failures = 0
       server = TasteTester::Server.new
       if threaded_upload
         all_threads << Thread.new do
@@ -97,15 +97,43 @@ module TasteTester
       all_threads.shift.join if threaded_upload
 
       all_threads.each do |host_thread|
-        return_code.merge! [_handle_ssh_exception(host_thread)].to_h
+        thread_status = _join_and_handle_ssh_exception(host_thread)
+        if thread_status.nil?
+          # We timed out waiting for it to finish
+          long_running_threads << host_thread
+        else
+          return_code.merge! [thread_status].to_h
+        end
       end
-      # successful_hosts = return_code.select { |_, st| [*st].first.zero? }.keys
+
+      print_remaining = true
+      while !long_running_threads.empty?
+        if print_remaining
+          host_list = long_running_threads.map { |t| t[:hostname] }.join ','
+          printf("Still waiting on #{host_list} to finish...")
+          print_remaining = false
+        end
+        long_running_threads.each do |host_thread|
+          thread_status = _join_and_handle_ssh_exception(host_thread, 5)
+          unless thread_status.nil?
+            long_running_threads.delete host_thread
+            return_code.merge! [thread_status].to_h
+            print_remaining = true
+          end
+        end
+        if print_remaining
+          printf("\n")
+        else
+          printf('.')
+        end
+      end
       return_code
     end
 
-    def self._handle_ssh_exception(host_thread)
-      host_thread.join
+    def self._join_and_handle_ssh_exception(host_thread, limit = 15)
       hostname = host_thread[:hostname]
+      logger.info("Joining thread for #{hostname}...")
+      return if host_thread.join(limit).nil?
       return hostname, host_thread[:status]
     rescue TasteTester::Exceptions::AlreadyTestingError => e
       logger.error("User #{e.username} is already testing on #{hostname}")
@@ -161,7 +189,8 @@ module TasteTester
         TasteTester::Hooks.pre_test(TasteTester::Config.dryrun, repo, hosts)
       end
       return_code = self.run_parallel(:test, hosts, do_upload)
-      successful_hosts = return_code.select { |_, st| [*st].first.zero? }.keys
+      logger.warn("Return codes: #{return_code}")
+      successful_hosts = return_code.select { |_, st| st.zero? }.keys
       unless TasteTester::Config.skip_post_test_hook ||
           TasteTester::Config.linkonly
         TasteTester::Hooks.post_test(TasteTester::Config.dryrun, repo,
@@ -170,21 +199,29 @@ module TasteTester
       if successful_hosts.to_set == hosts.to_set
         # No exceptions, complete success: every host listed is now configured
         # to use our chef-zero instance.
+        logger.info("All hosts (#{successful_hosts}) set to testing.")
         exit(0)
       end
+      connect_failures = return_code.select { |_, st| st.to_i == 1 }.keys
+      already_testing = return_code.select { |_, st| st.to_i == 42 }.keys
       if successful_hosts.empty?
-        if connect_failures > 0
+        if connect_failures.length > 0
           # All the hosts we had failed, with at least one because of ssh
+          logger.warn("All hosts (#{connect_failures}) failed to connect.")
           exit(1)
         end
         # All requested hosts are being tested by another user. We didn't change
         # their configuration.
+        logger.warn("All hosts (#{already_testing}) already in testing.")
         exit(3)
       end
       # Otherwise, we got a mix of success and failure due to being tested by
-      # another user. We'll be pessemistic and return an error because the
+      # another user. We'll be pessimistic and return an error because the
       # intent to taste test the complete list was not successful.
       # code.
+      logger.info("Some hosts (#{successful_hosts}) set to testing.") if successful_hosts
+      logger.warn("Some hosts (#{connect_failures}) failed to connect.") if connect_failures
+      logger.warn("Some hosts (#{already_testing}) already in testing.") if already_testing
       exit(2)
     end
 
@@ -239,6 +276,9 @@ module TasteTester
       client.skip_checks = true if TasteTester::Config.skip_repo_checks
       client.force = true if TasteTester::Config.force_upload
       client.upload
+      if TasteTester::Config.parallel_hosts > 1
+        logger.info "Upload was successful."
+      end
     rescue StandardError => exception
       # We're trying to recover from common chef-zero errors
       # Most of them happen due to half finished uploads, which leave
