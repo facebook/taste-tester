@@ -411,11 +411,11 @@ MODES:
     end
 
     opts.on(
-      "-b", "--bundle BUNDLE_SETTING", ['true', 'false', 'compatible'], "Bundle mode setting"
+      '-b', '--bundle BUNDLE_SETTING', ['true', 'false', 'compatible'], 'Bundle mode setting'
     ) do |bundle_setting|
-        if ['true', 'false'].include?(bundle_setting)
-          bundle_setting = bundle_setting == 'true'
-        end
+      if ['true', 'false'].include?(bundle_setting)
+        bundle_setting = bundle_setting == 'true'
+      end
         options[:bundle] = bundle_setting
     end
   end
