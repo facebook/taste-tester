@@ -416,7 +416,7 @@ MODES:
       if ['true', 'false'].include?(bundle_setting)
         bundle_setting = bundle_setting == 'true'
       end
-        options[:bundle] = bundle_setting
+      options[:bundle] = bundle_setting
     end
   end
 
