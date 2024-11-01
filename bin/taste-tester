@@ -409,6 +409,15 @@ MODES:
     ) do
       options[:skip_post_test_hook] = true
     end
+
+    opts.on(
+      '-b', '--bundle BUNDLE_SETTING', ['true', 'false', 'compatible'], 'Bundle mode setting'
+    ) do |bundle_setting|
+      if ['true', 'false'].include?(bundle_setting)
+        bundle_setting = bundle_setting == 'true'
+      end
+      options[:bundle] = bundle_setting
+    end
   end
 
   if mode == 'help'
