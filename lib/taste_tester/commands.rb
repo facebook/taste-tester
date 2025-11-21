@@ -151,7 +151,6 @@ module TasteTester
 
     def self.test
       do_upload = false
-      logger.warn('Using babar threaded taste-tester')
       hosts = TasteTester::Config.servers
       unless hosts
         logger.warn('You must provide a hostname')
