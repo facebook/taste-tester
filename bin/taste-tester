@@ -411,6 +411,15 @@ MODES:
     end
 
     opts.on(
+      '-b', '--bundle BUNDLE_SETTING', ['true', 'false', 'compatible'], 'Bundle mode setting'
+    ) do |bundle_setting|
+      if ['true', 'false'].include?(bundle_setting)
+        bundle_setting = bundle_setting == 'true'
+      end
+      options[:bundle] = bundle_setting
+    end
+
+    opts.on(
       '--parallel-host-requests NUMHOSTS', 'Start NUMHOSTS threads in parallel'
     ) do |n|
       unless n.to_i > 0
