@@ -132,7 +132,6 @@ module TasteTester
         }
         sleep 60
       }
-      done
       EOS
     end
 
