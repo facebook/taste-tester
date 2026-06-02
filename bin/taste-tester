@@ -112,6 +112,12 @@ MODES:
     NOTE!! This is #{'NOT'.red} a sufficient test, you must log onto the remote
     machine and verify the changes you are trying to make are actually present.
 
+  run-reverse-tunnels
+    Set up reverse SSH tunnels from each server in '-s' to your local
+    taste-tester server and wait until terminated. If the local server isn't
+    already running, it will be started and the latest cookbooks/roles uploaded
+    first. On shutdown (Ctrl+C, SIGTERM, etc.), all tunnels are cleaned up.
+
   stop
     You probably don't want this. It will shutdown the chef-zero server on
     your localhost.
@@ -460,6 +466,8 @@ MODES:
       TasteTester::Commands.untest
     when :run
       TasteTester::Commands.runchef
+    when :'run-reverse-tunnels'
+      TasteTester::Commands.run_reverse_tunnels
     when :upload
       TasteTester::Commands.upload
     when :impact

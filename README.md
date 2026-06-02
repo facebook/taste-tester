@@ -1,6 +1,6 @@
 # Taste Tester
 
-![Continuous Integration](https://github.com/facebook/taste-tester/workflows/Continuous%20Integration/badge.svg?event=push)
+![CI][b]
 
 ## Intro
 Ohai!
@@ -41,8 +41,9 @@ See the help for further information.
 
 ## Prerequisites
 
-* Taste Tester assumes that `/etc/chef/client.rb` and `/etc/chef/client.pem` on your
-servers is a symlink and that your real config is `/etc/chef/client-prod.rb` and
+* Taste Tester assumes that `/etc/chef/client.rb` and
+`/etc/chef/client.pem` on your servers is a symlink and that your
+real config is `/etc/chef/client-prod.rb` and
 `/etc/chef/client-prod.pem`, respectively.
 
 * Taste Tester assumes that it's generally safe to "go back" to production. I.e.
@@ -141,9 +142,9 @@ The following functions can optionally be defined:
 
 * self.pre_upload(dryrun, repo, last_ref, cur_ref)
 
-Stuff to do before we upload anything to chef-zero. `Repo` is a BetweenMeals::Repo
-object. `last_ref` is the last git ref we uploaded and `cur_ref` is the git ref
-the repo is currently at,
+Stuff to do before we upload anything to chef-zero. `Repo` is a
+BetweenMeals::Repo object. `last_ref` is the last git ref we
+uploaded and `cur_ref` is the git ref the repo is currently at,
 
 * self.post_upload(dryrun, repo, last_ref, cur_ref)
 
@@ -217,3 +218,5 @@ Be sure to pass this plugin file with `-p` on the command line or set it as
 ## License
 
 See the `LICENSE` file.
+
+[b]: https://github.com/facebook/taste-tester/actions/workflows/ci.yml/badge.svg

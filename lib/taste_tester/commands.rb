@@ -199,6 +199,58 @@ module TasteTester
       end
     end
 
+    def self.run_reverse_tunnels
+      hosts = TasteTester::Config.servers
+      unless hosts
+        logger.warn('You must provide a hostname')
+        exit(1)
+      end
+
+      # Make sure the local taste-tester server is up with the latest
+      # cookbooks/roles uploaded, starting it if it isn't already running.
+      upload unless TasteTester::Server.running?
+
+      server = TasteTester::Server.new
+
+      signal_names = %w{INT TERM HUP QUIT}
+      signal_handlers = {}
+      stop = false
+      signal_handler = proc { stop = true }
+
+      signal_names.each do |signal_name|
+        signal_handlers[signal_name] = Signal.trap(signal_name, signal_handler)
+      rescue ArgumentError
+        # ignore unsupported signals
+      end
+
+      begin
+        hosts.each do |hostname|
+          TasteTester::Tunnel.kill(hostname)
+          TasteTester::Tunnel.new(hostname, server).run
+        end
+
+        logger.warn(
+          "Running reverse tunnels to localhost:#{server.port}. " \
+          'Press Ctrl+C to stop.',
+        )
+        sleep 1 until stop
+      ensure
+        hosts.each do |hostname|
+          TasteTester::Tunnel.kill(hostname)
+        rescue StandardError => e
+          logger.error(
+            "Failed cleaning up tunnel on #{hostname} during shutdown: #{e}",
+          )
+        end
+
+        signal_handlers.each do |signal_name, previous_handler|
+          Signal.trap(signal_name, previous_handler)
+        rescue ArgumentError
+          # ignore unsupported signals
+        end
+      end
+    end
+
     def self.upload
       server = TasteTester::Server.new
       # On a force-upload rather than try to clean up whatever's on the server
