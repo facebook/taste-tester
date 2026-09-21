@@ -68,33 +68,37 @@ module TasteTester
       last_running_thread = 0
       return_code = {}
       server = TasteTester::Server.new
+      upload_thread = nil
       if threaded_upload
-        all_threads << Thread.new do
-          Thread.current[:hostname] = :upload
+        upload_thread = Thread.new do
           Thread.current.report_on_exception = true
-          Thread.current[:status] = upload
+          upload
         end
-        running_threads += 1
       end
 
       hosts.to_set.each do |hostname|
         # Poor man thread pool manager: keeping it simple
         if running_threads >= TasteTester::Config.parallel_hosts
-          return_code.merge! _handle_ssh_exception(all_threads[last_running_thread])
+          thread_status = _join_and_handle_ssh_exception(
+            all_threads[last_running_thread], nil
+          )
+          return_code.merge! [thread_status].to_h
           last_running_thread += 1
         end
-        all_threads << Thread.new do
-          Thread.current[:hostname] = hostname
+        host_thread = Thread.new do
           Thread.current.report_on_exception = false
           Thread.current[:status] = TasteTester::Host.new(hostname, server).send mode
         end
+        # Set from the parent: the thread may not have started when we join it
+        host_thread[:hostname] = hostname
+        all_threads << host_thread
         running_threads += 1
       end
 
       # upload will raise on failure so no need of special handling
-      all_threads.shift.join if threaded_upload
+      upload_thread.join if upload_thread
 
-      all_threads.each do |host_thread|
+      all_threads.drop(last_running_thread).each do |host_thread|
         thread_status = _join_and_handle_ssh_exception(host_thread)
         if thread_status.nil?
           # We timed out waiting for it to finish
@@ -111,7 +115,7 @@ module TasteTester
           printf("Still waiting on #{host_list} to finish...")
           print_remaining = false
         end
-        long_running_threads.each do |host_thread|
+        long_running_threads.dup.each do |host_thread|
           thread_status = _join_and_handle_ssh_exception(host_thread, 5)
           unless thread_status.nil?
             long_running_threads.delete host_thread

@@ -25,7 +25,7 @@ require 'taste_tester/exceptions'
 
 module TasteTester
   # Wrapper around IO to stream, prefixing the lines with the hostname
-  class IO < IO
+  class IO < ::IO
     def initialize(prefix, fd)
       @prefix = prefix.nil? || prefix.empty? ? '' : "#{prefix} "
       @first = true
